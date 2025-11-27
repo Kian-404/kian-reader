@@ -1,0 +1,8 @@
+{
+  "name": "Kianer",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite",
+  "id": "6d1c3b5a"
+}
