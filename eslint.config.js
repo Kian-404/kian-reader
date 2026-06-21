@@ -4,7 +4,26 @@ import createVueTsConfig from '@vue/eslint-config-typescript'
 
 export default [
   {
-    ignores: ['dist/**', 'android/**'],
+    ignores: [
+      '**/.DS_Store',
+      '**/node_modules',
+      'coverage',
+      'dist',
+      'ios',
+      'android',
+      '*.local',
+      '*.sw?',
+      '*.suo',
+      '*.ntvs*',
+      '*.njsproj',
+      '*.sln',
+      'npm-debug.log*',
+      'yarn-debug.log*',
+      'yarn-error.log*',
+      'pnpm-debug.log*',
+      '.idea',
+      '.vscode',
+    ],
   },
   js.configs.recommended,
   ...pluginVue.configs['flat/essential'],
