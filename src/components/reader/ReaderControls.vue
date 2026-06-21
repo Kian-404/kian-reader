@@ -57,7 +57,7 @@ const props = defineProps<{
   progress: number;
 }>();
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'back'): void;
   (e: 'progress-change', val: number): void;
   (e: 'toggle-search'): void;

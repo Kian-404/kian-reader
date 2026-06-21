@@ -1,4 +1,4 @@
-import { ref, shallowRef, watch, nextTick } from 'vue';
+import { ref, shallowRef, watch } from 'vue';
 import * as pdfjsLib from 'pdfjs-dist';
 import { useReaderStore } from '@/stores/reader';
 import { useLibraryStore } from '@/stores/library';
@@ -210,7 +210,7 @@ export function usePdfEngine(bookId: string) {
  * 处理滚动事件，确定当前最可见的PDF页面并更新相关状态
  * @param {HTMLElement} target - 触发滚动事件的DOM元素
  */
-  const handleScroll = (target: HTMLElement) => {
+  const handleScroll = () => {
   // 如果PDF文档不存在，则直接返回
     if (!pdfDoc.value) return;
   // 获取所有PDF页面容器元素
@@ -220,16 +220,10 @@ export function usePdfEngine(bookId: string) {
 
   // 遍历所有页面容器，计算可见区域
     containers.forEach((container: any) => {
-      const rect = container.getBoundingClientRect(); // 获取容器的位置和尺寸信息
-      let visibleArea = 0; // 当前容器的可见区域面积
-    // 根据分页模式计算可见区域
-      if (readerStore.paginationMode === 'horizontal') {
-      // 水平分页模式：计算水平方向的可见宽度
-        visibleArea = Math.min(rect.right, window.innerWidth) - Math.max(rect.left, 0);
-      } else {
-      // 垂直分页模式：计算垂直方向的可见高度
-        visibleArea = Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0);
-      }
+      const rect = container.getBoundingClientRect();
+      const visibleArea = readerStore.paginationMode === 'horizontal'
+        ? Math.min(rect.right, window.innerWidth) - Math.max(rect.left, 0)
+        : Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0);
 
     // 如果当前容器的可见区域大于之前记录的最大值，则更新最大可见区域和最可见页码
       if (visibleArea > maxVisibleArea) {

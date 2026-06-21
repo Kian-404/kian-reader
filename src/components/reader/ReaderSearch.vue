@@ -50,7 +50,7 @@ const props = defineProps<{
   rendition?: any;
 }>();
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'jump', res: any): void;
 }>();
 
@@ -79,7 +79,7 @@ const doSearch = async () => {
         current++;
         searchStatus.value = `第 ${current} / ${total} 章节`;
         try {
-          const doc = await item.load(epub.load.bind(epub));
+          await item.load(epub.load.bind(epub));
           const res = item.find(query);
           
           if (res && res.length > 0) {

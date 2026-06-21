@@ -1,5 +1,4 @@
-import { ref, computed, nextTick } from 'vue';
-import { useReaderStore } from '@/stores/reader';
+import { ref, computed } from 'vue';
 import { useLibraryStore } from '@/stores/library';
 
 /** 每页字符数（约一屏中文） */
@@ -39,7 +38,6 @@ const detectEncoding = (data: ArrayBuffer): string => {
 };
 
 export function useTxtEngine(bookId: string) {
-  const readerStore = useReaderStore();
   const libraryStore = useLibraryStore();
 
   const txtContent = ref('');

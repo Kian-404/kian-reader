@@ -1,4 +1,4 @@
-import { ref, shallowRef, watch, nextTick } from 'vue';
+import { ref, shallowRef, watch } from 'vue';
 import ePub, { Rendition } from 'epubjs';
 
 // epubjs type declarations are incomplete — cast to callable

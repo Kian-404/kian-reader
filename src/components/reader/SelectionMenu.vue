@@ -33,13 +33,13 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{
+defineProps<{
   text: string;
   comment: string;
   selectedColor?: string;
 }>();
 
-const emit = defineEmits<{
+defineEmits<{
   save: [];
   close: [];
   'update:comment': [value: string];

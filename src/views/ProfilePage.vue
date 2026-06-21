@@ -224,6 +224,7 @@ const handleImport = async (event: Event) => {
 
     ElMessage.info('正在恢复数据...');
     const cleanBooks = data.books.map((b: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { _fileDataBase64, ...meta } = b;
       return meta;
     });
