@@ -1,4 +1,4 @@
-import { ref, shallowRef, watch } from 'vue';
+import { ref, shallowRef, watch, nextTick } from 'vue';
 import * as pdfjsLib from 'pdfjs-dist';
 import { useReaderStore } from '@/stores/reader';
 import { useLibraryStore } from '@/stores/library';

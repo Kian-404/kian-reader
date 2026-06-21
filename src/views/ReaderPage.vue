@@ -500,7 +500,7 @@ const handleScroll = (e: Event) => {
   const target = e.target as HTMLElement;
   // Only PDF engine has handleScroll (TXT is page-based, EPUB is managed by epubjs)
   if (book.value?.format === 'pdf') {
-    pdfEngine.handleScroll?.(target);
+    pdfEngine.handleScroll?.();
   }
 };
 

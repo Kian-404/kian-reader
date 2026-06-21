@@ -39,7 +39,7 @@ defineProps<{
   selectedColor?: string;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   save: [];
   close: [];
   'update:comment': [value: string];
