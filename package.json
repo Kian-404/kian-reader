@@ -51,5 +51,5 @@
     "vitest": "^4.1.9",
     "vue-tsc": "^3.3.5"
   },
-  "description": "An Ionic project"
+  "description": "Kianer Reader - 跨平台电子书阅读器 (EPUB/PDF/TXT)"
 }
