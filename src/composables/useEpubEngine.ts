@@ -1,5 +1,8 @@
 import { ref, shallowRef, watch, nextTick } from 'vue';
 import ePub, { Rendition } from 'epubjs';
+
+// epubjs type declarations are incomplete — cast to callable
+const createEpub = ePub as unknown as (data: ArrayBuffer) => any;
 import { useReaderStore } from '@/stores/reader';
 import { useLibraryStore } from '@/stores/library';
 
@@ -55,20 +58,17 @@ export function useEpubEngine(bookId: string) {
   const injectFontFamily = () => {
     if (!rendition.value) return;
     try {
-      const contents = rendition.value.getContents();
-      if (!contents || !contents.length) return;
+      const content = rendition.value.getContents();
+      if (!content?.document?.head) return;
       const css = `body, p, span, div, h1, h2, h3, h4, h5, h6 { font-family: ${readerStore.fontFamily} !important; }`;
-      contents.forEach((c: any) => {
-        const doc = c.document as Document;
-        if (!doc?.head) return;
-        let style = doc.getElementById('kdf-font') as HTMLStyleElement;
-        if (!style) {
-          style = doc.createElement('style');
-          style.id = 'kdf-font';
-          doc.head.appendChild(style);
-        }
-        style.textContent = css;
-      });
+      const doc = content.document;
+      let style = doc.getElementById('kdf-font') as HTMLStyleElement;
+      if (!style) {
+        style = doc.createElement('style');
+        style.id = 'kdf-font';
+        doc.head.appendChild(style);
+      }
+      style.textContent = css;
     } catch (e) {
       console.warn('Cannot inject font-family into EPUB content', e);
     }
@@ -137,11 +137,11 @@ export function useEpubEngine(bookId: string) {
   };
 
   const initEpub = async (data: ArrayBuffer, containerId: string = "viewer") => {
-    const epub = ePub(data);
+    const epub = createEpub(data);
     epubBook.value = epub;
     
     const navigation = await epub.loaded.navigation;
-    toc.value = navigation.toc.map(item => ({
+    toc.value = navigation.toc.map((item: { label: string; href: string }) => ({
       label: item.label.trim(),
       href: item.href
     }));
@@ -154,23 +154,26 @@ export function useEpubEngine(bookId: string) {
       allowScriptedContent: true
     });
 
+    const r = rendition.value!;
+
     // 核心修复：只在 started 时注册一次主题
-    rendition.value.on("started", () => {
+    r.on("started", () => {
       registerThemes();
+      // 应用初始字体大小（watcher 只在值变化时触发，首次打开不会执行）
+      r.themes.fontSize(readerStore.fontSize + 'px');
     });
 
-    // 翻页/渲染后：重新 select 主题 + 注入字体族
-    rendition.value.on("rendered", () => {
-      if (rendition.value) {
-        rendition.value.themes.select(readerStore.theme);
-        injectFontFamily();
-      }
+    // 翻页/渲染后：重新 apply 字体大小、主题和字体族
+    r.on("rendered", () => {
+      r.themes.fontSize(readerStore.fontSize + 'px');
+      r.themes.select(readerStore.theme);
+      injectFontFamily();
     });
 
     const savedCfi = localStorage.getItem(`book-cfi-${bookId}`);
-    rendition.value.display(savedCfi || undefined);
+    r.display(savedCfi || undefined);
     
-    rendition.value.on("relocated", (location: any) => {
+    r.on("relocated", (location: any) => {
       if (location.start) {
         currentHref.value = location.start.href || '';
         localStorage.setItem(`book-cfi-${bookId}`, location.start.cfi);
@@ -197,7 +200,7 @@ export function useEpubEngine(bookId: string) {
 
   const handlePaginationChange = async () => {
     isPageLoading.value = true;
-    const loc = rendition.value?.currentLocation() as any;
+    const loc = rendition.value?.currentLocation?.() as any;
     const currentCfi = loc?.start?.cfi;
     
     if (rendition.value) {
@@ -222,23 +225,24 @@ export function useEpubEngine(bookId: string) {
       allowScriptedContent: true
     });
     
+    const r = rendition.value!;
     bindEpubHooks(epubBook.value);
 
-    rendition.value.on("started", () => {
+    r.on("started", () => {
       registerThemes();
+      r.themes.fontSize(readerStore.fontSize + 'px');
       if (currentCfi) {
-        rendition.value?.display(currentCfi);
+        r.display(currentCfi);
       } else {
-        rendition.value?.display();
+        r.display();
       }
       setTimeout(() => { isPageLoading.value = false; }, 200);
     });
 
-    rendition.value.on("rendered", () => {
-      if (rendition.value) {
-        rendition.value.themes.select(readerStore.theme);
-        injectFontFamily();
-      }
+    r.on("rendered", () => {
+      r.themes.fontSize(readerStore.fontSize + 'px');
+      r.themes.select(readerStore.theme);
+      injectFontFamily();
     });
     
     // 安全兜底

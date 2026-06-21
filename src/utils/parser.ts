@@ -1,6 +1,8 @@
 import ePub from 'epubjs';
 import * as pdfjsLib from 'pdfjs-dist';
 
+const createEpub = ePub as unknown as (data: ArrayBuffer) => any;
+
 // Set up PDF.js worker using the local file we copied to public
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
 
@@ -18,7 +20,7 @@ export const extractMetadata = async (file: File, format: 'txt' | 'epub' | 'pdf'
 
   try {
     if (format === 'epub') {
-      const book = ePub(await file.arrayBuffer());
+      const book = createEpub(await file.arrayBuffer());
       const meta = await book.loaded.metadata;
       metadata.title = meta.title || metadata.title;
       metadata.author = meta.creator || metadata.author;
