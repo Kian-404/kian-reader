@@ -125,7 +125,7 @@
       >
         <ReaderSearch 
           :book-format="book?.format" 
-          :txt-content="currentEngine?.txtContent?.value || ''" 
+          :txt-content="book?.format === 'txt' ? (txtEngine.txtContent?.value || '') : ''" 
           :rendition="epubEngine.rendition.value"
           @jump="jumpToSearchResult"
         />
@@ -498,7 +498,10 @@ const handleGlobalClick = (clientX: number) => {
 
 const handleScroll = (e: Event) => {
   const target = e.target as HTMLElement;
-  currentEngine.value?.handleScroll?.(target);
+  // Only PDF engine has handleScroll (TXT is page-based, EPUB is managed by epubjs)
+  if (book.value?.format === 'pdf') {
+    pdfEngine.handleScroll?.(target);
+  }
 };
 
 /**
@@ -530,7 +533,11 @@ const onProgressChange = (val: number) => {
  * 分页和样式处理
  */
 const handlePaginationChange = () => {
-  currentEngine.value?.handlePaginationChange?.();
+  if (book.value?.format === 'epub') {
+    epubEngine.handlePaginationChange();
+  } else if (book.value?.format === 'pdf') {
+    pdfEngine.handlePaginationChange();
+  }
 };
 
 const handleSizeChange = () => {
@@ -559,7 +566,7 @@ const toggleControls = async () => {
   showControls.value = !showControls.value;
 
   try {
-    await Haptics.selection();
+    await Haptics.selectionEnd();
   } catch (e) {
     // 设备不支持触觉反馈
   }
