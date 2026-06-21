@@ -1,0 +1,158 @@
+// Glassmorphism and Modern Minimalist styles for Element Plus components
+
+// --- Global Message (Toast/Message) ---
+.el-message {
+  border-radius: 16px !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08) !important;
+  padding: 14px 24px !important;
+  min-width: 280px !important;
+  top: 40px !important;
+
+  .el-message__content {
+    color: #334155 !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+  }
+
+  &.el-message--success { background: rgba(236, 253, 245, 0.8) !important; border-color: rgba(52, 211, 153, 0.3) !important; }
+  &.el-message--error { background: rgba(254, 242, 242, 0.8) !important; border-color: rgba(248, 113, 113, 0.3) !important; }
+  &.el-message--warning { background: rgba(255, 251, 235, 0.8) !important; border-color: rgba(251, 191, 36, 0.3) !important; }
+}
+
+// --- Global Notification ---
+.el-notification {
+  border-radius: 20px !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1) !important;
+  
+  .el-notification__title {
+    font-weight: 800 !important;
+    color: #1e293b !important;
+  }
+  
+  .el-notification__content {
+    color: #475569 !important;
+  }
+}
+
+// --- Message Box (Confirm/Alert) ---
+.el-message-box.glass-message-box {
+  border-radius: 28px !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(25px) !important;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.12) !important;
+  padding: 24px !important;
+  max-width: 85% !important;
+
+  .el-message-box__title {
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    color: #1e293b !important;
+    margin-bottom: 12px !important;
+  }
+
+  .el-message-box__message {
+    font-size: 15px !important;
+    color: #475569 !important;
+    line-height: 1.6 !important;
+  }
+
+  .el-message-box__btns {
+    padding-top: 20px !important;
+    .el-button {
+      height: 40px !important;
+      padding: 0 20px !important;
+      font-weight: 600 !important;
+      border-radius: 14px !important;
+      transition: all 0.3s !important;
+      
+      &.el-button--primary {
+        box-shadow: 0 6px 15px rgba(64, 158, 255, 0.25) !important;
+      }
+    }
+  }
+}
+
+// --- Dialog (Modal) ---
+.el-dialog.glass-dialog {
+  border-radius: 28px !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(25px) !important;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15) !important;
+  overflow: hidden;
+
+  .el-dialog__header {
+    margin-right: 0 !important;
+    padding: 24px 28px 10px !important;
+    .el-dialog__title {
+      font-size: 19px !important;
+      font-weight: 800 !important;
+      color: #1e293b !important;
+      letter-spacing: -0.5px !important;
+    }
+    .el-dialog__headerbtn {
+      top: 20px !important;
+      right: 20px !important;
+      font-size: 20px !important;
+    }
+  }
+
+  .el-dialog__body {
+    padding: 15px 28px 28px !important;
+  }
+}
+
+// --- Drawer (Reader Menu) ---
+.el-drawer.glass-drawer {
+  --el-drawer-bg-color: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(20px) !important;
+  border-radius: 24px 24px 0 0 !important;
+  
+  .el-drawer__header {
+    margin-bottom: 0 !important;
+    padding: 20px 25px !important;
+    span { 
+      font-weight: 800 !important; 
+      color: #1e293b !important;
+      font-size: 18px !important;
+    }
+  }
+}
+
+// --- Glass Card Utility ---
+.glass-card {
+  background: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(15px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05) !important;
+}
+
+// --- Dark Mode Overrides ---
+html.dark, html.ion-palette-dark {
+  .el-message {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    .el-message__content { color: #f1f5f9 !important; }
+  }
+
+  .el-message-box.glass-message-box, .el-dialog.glass-dialog, .el-drawer.glass-drawer {
+    background: rgba(15, 23, 42, 0.75) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    
+    .el-message-box__title, .el-dialog__title, .el-drawer__header span { color: #f8fafc !important; }
+    .el-message-box__message { color: #cbd5e1 !important; }
+  }
+
+  .glass-card {
+    background: rgba(30, 41, 59, 0.5) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+}
