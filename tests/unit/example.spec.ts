@@ -1,10 +1,29 @@
 import { mount } from '@vue/test-utils'
-import Tab1Page from '@/views/Tab1Page.vue'
-import { describe, expect, test } from 'vitest'
+import HomePage from '@/views/LibraryPage.vue'
+import { describe, expect, test, vi } from 'vitest'
+import { createPinia } from 'pinia'
+import { IonicVue } from '@ionic/vue'
 
-describe('Tab1Page.vue', () => {
-  test('renders tab 1 Tab1Page', () => {
-    const wrapper = mount(Tab1Page)
-    expect(wrapper.text()).toMatch('Tab 1 page')
+// Mock parser to avoid pdfjs-dist / epubjs Node.js compatibility issues
+vi.mock('../src/utils/parser', () => ({
+  extractMetadata: vi.fn().mockResolvedValue({ title: 'Test', author: 'Author' }),
+}))
+
+describe('LibraryPage.vue', () => {
+  test('renders empty library state', () => {
+    const wrapper = mount(HomePage, {
+      global: {
+        plugins: [createPinia(), IonicVue],
+        stubs: {
+          'ion-page': { template: '<div><slot /></div>' },
+          'ion-header': { template: '<header><slot /></header>' },
+          'ion-content': { template: '<main><slot /></main>' },
+          'ion-toolbar': { template: '<div><slot /></div>' },
+          'ion-title': { template: '<span><slot /></span>' },
+          'ion-buttons': { template: '<div><slot /></div>' },
+        },
+      },
+    })
+    expect(wrapper.text()).toContain('开启您的阅读之旅')
   })
 })
