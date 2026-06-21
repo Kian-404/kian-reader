@@ -496,7 +496,7 @@ const handleGlobalClick = (clientX: number) => {
   }
 };
 
-const handleScroll = (e: Event) => {
+const handleScroll = () => {
   // Only PDF engine has handleScroll (TXT is page-based, EPUB is managed by epubjs)
   if (book.value?.format === 'pdf') {
     pdfEngine.handleScroll?.();
