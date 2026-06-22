@@ -866,23 +866,6 @@ const removeNote = (id: string) => {
   height: 100%;
 }
 
-/* 阅读设置抽屉：自适应内容高度，去掉 Element Plus 默认 30% 内联高度 */
-.settings-drawer {
-  :deep(.el-drawer__wrapper) {
-    display: flex;
-    align-items: flex-end;
-  }
-  :deep(.el-drawer) {
-    height: auto !important;
-    bottom: 0;
-    position: absolute;
-  }
-  :deep(.el-drawer__body) {
-    overflow-y: visible;
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-}
-
 .page-indicator {
   position: fixed;
   bottom: 30px;
@@ -939,5 +922,22 @@ html.ion-palette-dark {
   .reader-loading-overlay {
     background: rgba(0, 0, 0, 0.4);
   }
+}
+</style>
+
+<!-- 非 scoped：穿透 Teleport 覆盖 Element Plus 内联样式 -->
+<style>
+.settings-drawer .el-drawer__wrapper {
+  display: flex;
+  align-items: flex-end;
+}
+.settings-drawer .el-drawer {
+  height: auto !important;
+  bottom: 0;
+  position: absolute;
+}
+.settings-drawer .el-drawer__body {
+  overflow-y: visible;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 </style>
