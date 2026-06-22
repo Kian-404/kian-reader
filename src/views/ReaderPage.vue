@@ -27,7 +27,7 @@
         @scroll="handleScroll"
       >
         <!-- TXT Engine -->
-        <div v-if="book?.format === 'txt'" class="txt-render" :class="'mode-' + readerStore.paginationMode">
+        <div v-if="book?.format === 'txt'" class="txt-render" :class="'mode-' + readerStore.paginationMode" @contextmenu.prevent>
           <div 
             v-for="page in txtVisiblePages" 
             :key="page.globalIndex"
@@ -39,7 +39,7 @@
         </div>
 
         <!-- EPUB Engine -->
-        <div v-if="book?.format === 'epub'" class="epub-wrapper">
+        <div v-if="book?.format === 'epub'" class="epub-wrapper" @contextmenu.prevent>
           <div id="viewer" class="epub-render"></div>
         </div>
 
@@ -48,6 +48,7 @@
           v-if="book?.format === 'pdf'" 
           class="pdf-render"
           :class="readerStore.paginationMode"
+          @contextmenu.prevent
         >
           <div 
             v-for="n in pdfPages" 
@@ -405,6 +406,9 @@ const setupTxtSelection = () => {
   };
 
   bodies.forEach((el) => {
+    el.addEventListener('contextmenu', (e: Event) => {
+      e.preventDefault();
+    });
     el.addEventListener('mouseup', onTxtMouseUp);
     el.addEventListener('touchend', onTxtMouseUp);
   });

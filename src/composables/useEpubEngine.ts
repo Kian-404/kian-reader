@@ -104,6 +104,12 @@ export function useEpubEngine(bookId: string) {
 
     rendition.value.hooks.content.register((contents: any) => {
       const el = contents.document.documentElement;
+
+      // 阻止系统右键菜单弹出（选中文字时不再显示浏览器默认菜单）
+      el.addEventListener('contextmenu', (e: Event) => {
+        e.preventDefault();
+      });
+
       let startX = 0;
       let startY = 0;
       let startTime = 0;
