@@ -22,27 +22,86 @@
             <span class="value">{{ completedBooksCount }}</span>
             <Icon icon="solar:check-circle-linear" class="card-icon" />
           </div>
+          <div class="summary-card glass-card">
+            <span class="label">阅读中</span>
+            <span class="value">{{ readingBooksCount }}</span>
+            <Icon icon="solar:book-linear" class="card-icon" />
+          </div>
+          <div class="summary-card glass-card">
+            <span class="label">未开始</span>
+            <span class="value">{{ unreadBooksCount }}</span>
+            <Icon icon="solar:book-linear" class="card-icon icon-off" />
+          </div>
         </div>
 
-        <!-- Progress Section -->
+        <!-- Format Distribution -->
+        <div class="insights-section glass-card">
+          <h3>藏书构成</h3>
+          <div class="format-grid">
+            <div v-for="fmt in formatStats" :key="fmt.format" class="format-row">
+              <div class="format-info">
+                <span class="format-badge" :class="fmt.format">{{ fmt.label }}</span>
+                <span class="format-count">{{ fmt.count }} 本</span>
+              </div>
+              <div class="format-bar-track">
+                <div
+                  class="format-bar-fill"
+                  :class="fmt.format"
+                  :style="{ width: fmt.percent + '%' }"
+                ></div>
+              </div>
+              <span class="format-percent">{{ Math.round(fmt.percent) }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reading Progress -->
         <div class="insights-section glass-card">
           <h3>阅读进度</h3>
           <div class="progress-stats">
-            <el-progress 
-              type="dashboard" 
-              :percentage="averageProgress" 
-              :color="progressColors"
-              :stroke-width="10"
-            >
-              <template #default="{ percentage }">
-                <span class="percentage-value">{{ Math.round(percentage) }}%</span>
-                <span class="percentage-label">平均进度</span>
-              </template>
-            </el-progress>
-            <div class="progress-details">
-              <p>阅读中的书籍：{{ readingBooksCount }} 本</p>
-              <p>未开始的书籍：{{ unreadBooksCount }} 本</p>
+            <div class="ring-container">
+              <svg viewBox="0 0 120 120" class="progress-ring">
+                <circle cx="60" cy="60" r="52" fill="none" stroke="#e5e7eb" stroke-width="10" />
+                <circle
+                  cx="60" cy="60" r="52"
+                  fill="none"
+                  :stroke="progressRingColor"
+                  stroke-width="10"
+                  stroke-linecap="round"
+                  :stroke-dasharray="circumference"
+                  :stroke-dashoffset="ringOffset"
+                  transform="rotate(-90 60 60)"
+                  class="ring-arc"
+                />
+                <text x="60" y="52" text-anchor="middle" class="ring-value" fill="#1e293b">
+                  {{ Math.round(averageProgress) }}%
+                </text>
+                <text x="60" y="72" text-anchor="middle" class="ring-label" fill="#64748b">
+                  平均进度
+                </text>
+              </svg>
             </div>
+            <div class="status-legend">
+              <div class="legend-item">
+                <span class="legend-dot dot-complete"></span>
+                <span class="legend-label">已完成</span>
+                <span class="legend-count">{{ completedBooksCount }}</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot dot-reading"></span>
+                <span class="legend-label">阅读中</span>
+                <span class="legend-count">{{ readingBooksCount }}</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot dot-unread"></span>
+                <span class="legend-label">未开始</span>
+                <span class="legend-count">{{ unreadBooksCount }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="total-size" v-if="totalSize > 0">
+            <Icon icon="solar:folder-linear" style="font-size: 14px; margin-right: 4px;" />
+            藏书总大小：{{ formatSize(totalSize) }}
           </div>
         </div>
 
@@ -74,12 +133,16 @@
                 </div>
               </div>
               <div class="recent-info">
-                <h4 class="title">{{ book.title }}</h4>
+                <div class="recent-top">
+                  <h4 class="title">{{ book.title }}</h4>
+                  <span class="format-tag" :class="book.format">{{ book.format.toUpperCase() }}</span>
+                </div>
                 <p class="meta">
-                  进度：{{ Math.round(book.progress) }}% · 
-                  {{ formatTime(book.lastReadAt) }}
+                  进度 {{ Math.round(book.progress) }}% · {{ formatTime(book.lastReadAt) }}
                 </p>
-                <el-progress :percentage="book.progress" :show-text="false" :stroke-width="4" />
+                <div class="mini-progress">
+                  <div class="mini-bar" :style="{ width: book.progress + '%' }"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -108,6 +171,8 @@ onMounted(async () => {
   await libraryStore.initStore();
 });
 
+// ── 阅读状态统计 ──
+
 const completedBooksCount = computed(() => 
   libraryStore.books.filter(b => b.progress >= 99).length
 );
@@ -126,20 +191,69 @@ const averageProgress = computed(() => {
   return total / libraryStore.books.length;
 });
 
+// ── SVG 进度环 ──
+
+const circumference = 2 * Math.PI * 52; // r=52
+
+const ringOffset = computed(() => {
+  const pct = Math.min(averageProgress.value, 100);
+  return circumference - (circumference * pct) / 100;
+});
+
+const progressRingColor = computed(() => {
+  const p = averageProgress.value;
+  if (p >= 80) return '#10b981';
+  if (p >= 40) return '#409eff';
+  if (p > 0) return '#f59e0b';
+  return '#94a3b8';
+});
+
+// ── 格式分布 ──
+
+interface FormatStat {
+  format: string;
+  label: string;
+  count: number;
+  percent: number;
+}
+
+const formatStats = computed((): FormatStat[] => {
+  const total = libraryStore.books.length || 1;
+  const counts: Record<string, number> = { txt: 0, epub: 0, pdf: 0 };
+  for (const b of libraryStore.books) {
+    counts[b.format] = (counts[b.format] || 0) + 1;
+  }
+  return [
+    { format: 'txt', label: 'TXT 文本', count: counts.txt, percent: (counts.txt / total) * 100 },
+    { format: 'epub', label: 'EPUB 电子书', count: counts.epub, percent: (counts.epub / total) * 100 },
+    { format: 'pdf', label: 'PDF 文档', count: counts.pdf, percent: (counts.pdf / total) * 100 },
+  ];
+});
+
+const totalSize = computed(() =>
+  libraryStore.books.reduce((acc, b) => acc + (b.size || 0), 0)
+);
+
+const formatSize = (bytes: number): string => {
+  if (bytes === 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let i = 0;
+  let size = bytes;
+  while (size >= 1024 && i < units.length - 1) {
+    size /= 1024;
+    i++;
+  }
+  return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+};
+
+// ── 最近阅读 ──
+
 const recentBooks = computed(() => {
   return [...libraryStore.books]
     .filter(b => b.lastReadAt)
     .sort((a, b) => (b.lastReadAt || 0) - (a.lastReadAt || 0))
-    .slice(0, 3);
+    .slice(0, 5);
 });
-
-const progressColors = [
-  { color: '#f56c6c', percentage: 20 },
-  { color: '#e6a23c', percentage: 40 },
-  { color: '#5cb87a', percentage: 60 },
-  { color: '#1989fa', percentage: 80 },
-  { color: '#6f7ad3', percentage: 100 },
-];
 
 const openBook = (book: any) => {
   router.push(`/reader/${book.id}`);
@@ -152,7 +266,8 @@ const formatTime = (timestamp?: number) => {
   if (diff < 60000) return '刚刚';
   if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
-  return new Date(timestamp).toLocaleDateString();
+  if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`;
+  return new Date(timestamp).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
 };
 </script>
 
@@ -179,7 +294,7 @@ const formatTime = (timestamp?: number) => {
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 25px;
+  gap: 20px;
 }
 
 .glass-card {
@@ -190,56 +305,182 @@ const formatTime = (timestamp?: number) => {
   box-shadow: 0 8px 32px rgba(31, 38, 135, 0.07);
 }
 
+// ── Summary Grid ──
+
 .summary-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 15px;
+  gap: 12px;
 
   .summary-card {
-    padding: 20px;
+    padding: 18px;
     display: flex;
     flex-direction: column;
     position: relative;
     overflow: hidden;
 
-    .label { font-size: 13px; color: #64748b; margin-bottom: 5px; }
+    .label { font-size: 13px; color: #64748b; margin-bottom: 4px; }
     .value { font-size: 28px; font-weight: 800; color: #1e293b; }
     .card-icon {
       position: absolute;
-      right: -10px;
-      bottom: -10px;
-      font-size: 80px;
-      opacity: 0.05;
+      right: -8px;
+      bottom: -8px;
+      font-size: 72px;
+      opacity: 0.06;
       color: #409eff;
+      transition: opacity 0.3s;
+    }
+    .icon-off { color: #94a3b8; }
+  }
+}
+
+// ── Format Distribution ──
+
+.insights-section {
+  padding: 22px;
+  h3 { margin: 0 0 18px 0; font-size: 17px; font-weight: 700; color: #334155; }
+}
+
+.format-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  .format-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .format-info {
+      width: 100px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .format-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.3px;
+
+      &.txt  { background: #fffbeb; color: #b45309; }
+      &.epub { background: #f0fdf4; color: #166534; }
+      &.pdf  { background: #fef2f2; color: #991b1b; }
+    }
+
+    .format-count { font-size: 13px; color: #475569; font-weight: 500; white-space: nowrap; }
+
+    .format-bar-track {
+      flex: 1;
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 10px;
+      overflow: hidden;
+      min-width: 60px;
+
+      .format-bar-fill {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+        &.txt  { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        &.epub { background: linear-gradient(90deg, #10b981, #34d399); }
+        &.pdf  { background: linear-gradient(90deg, #ef4444, #f87171); }
+      }
+    }
+
+    .format-percent {
+      width: 36px;
+      text-align: right;
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      flex-shrink: 0;
     }
   }
 }
 
-.insights-section {
-  padding: 25px;
-  h3 { margin: 0 0 20px 0; font-size: 18px; font-weight: 700; color: #334155; }
-  
-  .progress-stats {
+// ── Ring Progress ──
+
+.progress-stats {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+
+  .ring-container {
+    flex-shrink: 0;
+  }
+
+  .progress-ring {
+    width: 120px;
+    height: 120px;
+  }
+
+  .ring-arc {
+    transition: stroke-dashoffset 0.8s cubic-bezier(0.34, 1.56, 0.64, 1),
+                stroke 0.4s ease;
+  }
+
+  .ring-value { font-size: 22px; font-weight: 800; }
+  .ring-label { font-size: 10px; }
+
+  .status-legend {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .legend-item {
     display: flex;
     align-items: center;
-    gap: 30px;
-  }
+    gap: 8px;
+    font-size: 13px;
+    color: #475569;
 
-  .percentage-value { font-size: 24px; font-weight: 800; color: #1e293b; display: block; }
-  .percentage-label { font-size: 12px; color: #64748b; }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
 
-  .progress-details {
-    p { font-size: 14px; color: #475569; margin: 8px 0; }
+      &.dot-complete { background: #10b981; }
+      &.dot-reading  { background: #409eff; }
+      &.dot-unread   { background: #94a3b8; }
+    }
+
+    .legend-label { flex: 1; }
+    .legend-count {
+      font-weight: 700;
+      color: #1e293b;
+      min-width: 20px;
+      text-align: right;
+    }
   }
 }
+
+.total-size {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #94a3b8;
+  gap: 4px;
+}
+
+// ── Recent Section ──
 
 .recent-section {
   .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
-    h3 { margin: 0; font-size: 18px; font-weight: 700; color: #334155; }
+    margin-bottom: 14px;
+    h3 { margin: 0; font-size: 17px; font-weight: 700; color: #334155; }
   }
 
   .no-recent {
@@ -252,15 +493,15 @@ const formatTime = (timestamp?: number) => {
   .recent-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
   }
 
   .recent-item {
-    padding: 12px;
+    padding: 12px 14px;
     display: flex;
-    gap: 15px;
+    gap: 14px;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
 
     &:active { transform: scale(0.98); }
 
@@ -269,18 +510,20 @@ const formatTime = (timestamp?: number) => {
       height: 70px;
       border-radius: 8px;
       overflow: hidden;
+      flex-shrink: 0;
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
       
       img { width: 100%; height: 100%; object-fit: cover; }
       .default-cover {
-        width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+        width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
         background: #e2e8f0; color: #64748b;
         
         .format-icon { font-size: 24px; opacity: 0.8; }
 
         &.epub { background: #f0fdf4; color: #166534; }
-        &.pdf { background: #fef2f2; color: #991b1b; }
-        &.txt { background: #fffbeb; color: #854d0e; }
+        &.pdf  { background: #fef2f2; color: #991b1b; }
+        &.txt  { background: #fffbeb; color: #854d0e; }
       }
     }
 
@@ -289,10 +532,58 @@ const formatTime = (timestamp?: number) => {
       display: flex;
       flex-direction: column;
       justify-content: center;
-      gap: 5px;
+      gap: 4px;
+      overflow: hidden;
 
-      .title { margin: 0; font-size: 15px; font-weight: 600; color: #1e293b; }
-      .meta { margin: 0; font-size: 12px; color: #64748b; }
+      .recent-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .title {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1e293b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .format-tag {
+        font-size: 10px;
+        font-weight: 800;
+        padding: 1px 6px;
+        border-radius: 4px;
+        flex-shrink: 0;
+        letter-spacing: 0.5px;
+
+        &.txt  { background: #fffbeb; color: #b45309; }
+        &.epub { background: #f0fdf4; color: #166534; }
+        &.pdf  { background: #fef2f2; color: #991b1b; }
+      }
+
+      .meta {
+        margin: 0;
+        font-size: 11px;
+        color: #94a3b8;
+      }
+
+      .mini-progress {
+        width: 100%;
+        height: 4px;
+        background: #e5e7eb;
+        border-radius: 4px;
+        overflow: hidden;
+
+        .mini-bar {
+          height: 100%;
+          background: linear-gradient(90deg, #409eff, #60a5fa);
+          border-radius: 4px;
+          transition: width 0.4s ease;
+        }
+      }
     }
   }
 }
@@ -314,35 +605,26 @@ html.ion-palette-dark .glass-card {
   background: rgba(40, 40, 40, 0.7);
   border-color: rgba(255, 255, 255, 0.1);
 }
-html.ion-palette-dark .summary-card .label {
-  color: #94a3b8;
-}
-html.ion-palette-dark .summary-card .value {
-  color: #e2e8f0;
+html.ion-palette-dark .summary-card {
+  .label { color: #94a3b8; }
+  .value { color: #e2e8f0; }
 }
 html.ion-palette-dark .insights-section h3,
 html.ion-palette-dark .recent-section .section-header h3 {
   color: #e2e8f0;
 }
-html.ion-palette-dark .insights-section .percentage-value {
-  color: #e2e8f0;
-}
-html.ion-palette-dark .insights-section .percentage-label {
-  color: #94a3b8;
-}
-html.ion-palette-dark .insights-section .progress-details p {
-  color: #cbd5e1;
-}
-html.ion-palette-dark .recent-section .no-recent {
-  color: #94a3b8;
-}
-html.ion-palette-dark .recent-item .recent-info .title {
-  color: #e2e8f0;
-}
-html.ion-palette-dark .recent-item .recent-info .meta {
-  color: #94a3b8;
-}
-html.ion-palette-dark .recent-item .recent-cover .default-cover {
-  background: #1e1e1e;
-}
+html.ion-palette-dark .ring-value { fill: #e2e8f0 !important; }
+html.ion-palette-dark .ring-label { fill: #94a3b8 !important; }
+html.ion-palette-dark .progress-ring circle:first-child { stroke: #334155; }
+html.ion-palette-dark .legend-item { color: #cbd5e1; }
+html.ion-palette-dark .legend-count { color: #e2e8f0; }
+html.ion-palette-dark .format-count { color: #94a3b8; }
+html.ion-palette-dark .format-percent { color: #94a3b8; }
+html.ion-palette-dark .format-bar-track { background: #334155; }
+html.ion-palette-dark .total-size { color: #64748b; }
+html.ion-palette-dark .recent-section .no-recent { color: #64748b; }
+html.ion-palette-dark .recent-item .recent-info .title { color: #e2e8f0; }
+html.ion-palette-dark .recent-item .recent-info .meta { color: #64748b; }
+html.ion-palette-dark .recent-item .recent-cover .default-cover { background: #1e1e1e; }
+html.ion-palette-dark .mini-progress { background: #334155; }
 </style>
