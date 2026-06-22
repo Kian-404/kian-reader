@@ -189,31 +189,33 @@ const handleBrightnessChange = (value: number) => {
 
 <style scoped lang="less">
 .settings-content {
-  padding: 10px 5px;
+  padding: 6px 5px 10px;
   display: flex;
   flex-direction: column;
-  gap: 25px;
+  gap: 16px;
 }
 
 .setting-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  min-height: 40px;
   
   .label {
     font-size: 14px;
     color: #64748b;
     font-weight: 500;
+    flex-shrink: 0;
   }
 }
 
 .theme-picker {
   display: flex;
-  gap: 15px;
+  gap: 12px;
   
   .theme-opt {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     cursor: pointer;
     border: 2px solid transparent;
@@ -253,16 +255,16 @@ const handleBrightnessChange = (value: number) => {
 .font-size-ctrl {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
   background: rgba(0, 0, 0, 0.03);
-  padding: 4px 12px;
+  padding: 3px 10px;
   border-radius: 20px;
 
   .size-val {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     color: #1e293b;
-    min-width: 24px;
+    min-width: 28px;
     text-align: center;
   }
 
@@ -277,15 +279,15 @@ const handleBrightnessChange = (value: number) => {
 .font-family-item {
   flex-direction: column;
   align-items: flex-start;
-  gap: 12px;
+  gap: 8px;
+  min-height: 0;
 }
 
 .font-family-picker {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   overflow-x: auto;
-  padding: 2px 0;
   scrollbar-width: none;
 
   &::-webkit-scrollbar {
@@ -296,7 +298,7 @@ const handleBrightnessChange = (value: number) => {
     flex: 1;
     min-width: 70px;
     text-align: center;
-    padding: 8px 0;
+    padding: 6px 0;
     background: rgba(0, 0, 0, 0.04);
     border-radius: 10px;
     font-size: 13px;
@@ -322,8 +324,9 @@ const handleBrightnessChange = (value: number) => {
 .brightness-ctrl {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex: 0.6;
+  gap: 10px;
+  flex: 1;
+  max-width: 220px;
 
   .sun-icon {
     color: #f39c12;
@@ -335,8 +338,9 @@ const handleBrightnessChange = (value: number) => {
     font-size: 12px;
     color: #64748b;
     font-weight: 600;
-    min-width: 35px;
+    min-width: 32px;
     text-align: right;
+    flex-shrink: 0;
   }
 
   :deep(.el-slider) {
@@ -354,26 +358,6 @@ const handleBrightnessChange = (value: number) => {
     .el-slider__button {
       border-color: #f39c12;
     }
-  }
-
-  .reset-btn {
-    font-size: 12px;
-    padding: 4px 10px;
-    border-radius: 10px;
-  }
-}
-
-.zoom-ctrl {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  .zoom-val {
-    font-size: 15px;
-    font-weight: 600;
-    color: #1e293b;
-    min-width: 40px;
-    text-align: center;
   }
 }
 html.ion-palette-dark {
