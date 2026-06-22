@@ -27,23 +27,23 @@
     </div>
 
     <div class="setting-item">
-      <span class="label">字体大小</span>
+      <span class="label">{{ isPdf ? 'PDF 缩放' : '字体大小' }}</span>
       <div class="font-size-ctrl">
         <el-button 
           circle 
           size="small" 
-          :disabled="readerStore.fontSize <= 12"
+          :disabled="isPdf ? readerStore.pdfScale <= 0.5 : readerStore.fontSize <= 12"
           @click="changeFontSize(-1)"
         >
           <template #icon>
             <Icon icon="solar:minus-circle-linear" style="font-size: 18px" />
           </template>
         </el-button>
-        <span class="size-val">{{ readerStore.fontSize }}</span>
+        <span class="size-val">{{ isPdf ? Math.round(readerStore.pdfScale * 100) + '%' : readerStore.fontSize }}</span>
         <el-button 
           circle 
           size="small" 
-          :disabled="readerStore.fontSize >= 40"
+          :disabled="isPdf ? readerStore.pdfScale >= 3.0 : readerStore.fontSize >= 40"
           @click="changeFontSize(1)"
         >
           <template #icon>
@@ -53,7 +53,7 @@
       </div>
     </div>
 
-    <div class="setting-item font-family-item">
+    <div v-if="!isPdf" class="setting-item font-family-item">
       <span class="label">阅读字体</span>
       <div class="font-family-picker">
         <button
@@ -85,7 +85,7 @@
       </div>
     </div>
 
-    <div class="setting-item pdf-zoom-item">
+    <div v-if="!isPdf" class="setting-item pdf-zoom-item">
       <span class="label">PDF 缩放</span>
       <div class="zoom-ctrl">
         <el-button
@@ -116,10 +116,17 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useReaderStore } from '@/stores/reader';
 import { Icon } from '@iconify/vue';
 
+const props = defineProps<{
+  bookFormat?: string;
+}>();
+
 const readerStore = useReaderStore();
+
+const isPdf = computed(() => props.bookFormat === 'pdf');
 
 /**
  * 主题配置
@@ -169,11 +176,20 @@ const handleThemeChange = (themeName: string) => {
  * @param delta 变化值（-1 或 +1）
  */
 const changeFontSize = (delta: number) => {
-  const newSize = readerStore.fontSize + delta;
-  // 限制字体大小范围：12px - 40px
-  if (newSize >= 12 && newSize <= 40) {
-    readerStore.fontSize = newSize;
-    emit('size-change');
+  if (isPdf.value) {
+    // PDF 模式：调节缩放
+    const newZoom = Math.round((readerStore.pdfScale + delta * 0.1) * 10) / 10;
+    if (newZoom >= 0.5 && newZoom <= 3.0) {
+      (readerStore as any).pdfScale = newZoom;
+      emit('size-change');
+    }
+  } else {
+    // TXT/EPUB 模式：调节字体大小
+    const newSize = readerStore.fontSize + delta;
+    if (newSize >= 12 && newSize <= 40) {
+      readerStore.fontSize = newSize;
+      emit('size-change');
+    }
   }
 };
 

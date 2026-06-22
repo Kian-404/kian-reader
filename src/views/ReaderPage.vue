@@ -153,6 +153,7 @@
         destroy-on-close
       >
         <ReaderSettings 
+          :book-format="book?.format"
           @pagination-change="handlePaginationChange" 
           @size-change="handleSizeChange" 
           @zoom-change="handleZoomChange"
