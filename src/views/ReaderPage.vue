@@ -154,7 +154,6 @@
         <ReaderSettings 
           @pagination-change="handlePaginationChange" 
           @size-change="handleSizeChange" 
-          @font-change="handleFontChange"
           @zoom-change="handleZoomChange"
         />
       </el-drawer>
@@ -543,12 +542,6 @@ const handleSizeChange = () => {
   // PDF 需要特殊处理
   if (book.value?.format === 'pdf') {
     pdfEngine.handlePaginationChange();
-  }
-};
-
-const handleFontChange = () => {
-  if (book.value?.format === 'epub') {
-    epubEngine.updateEpubStyle();
   }
 };
 

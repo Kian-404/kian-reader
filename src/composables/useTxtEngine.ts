@@ -98,14 +98,15 @@ export function useTxtEngine(bookId: string) {
     }
     toc.value = newToc;
 
-    // 恢复上次阅读位置
-    const savedPage = localStorage.getItem(`book-txt-page-${bookId}`);
-    if (savedPage) {
-      const idx = parseInt(savedPage);
-      if (!isNaN(idx) && idx >= 0 && idx < totalPages.value) {
-        currentPage.value = idx;
-        progress.value = ((idx + 1) / totalPages.value) * 100;
-      }
+    // 恢复上次阅读位置（从 IndexedDB 获取）
+    const book = libraryStore.books.find(b => b.id === bookId);
+    if (book && book.progress > 0 && totalPages.value > 0) {
+      const idx = Math.min(
+        Math.floor((book.progress / 100) * totalPages.value),
+        totalPages.value - 1
+      );
+      currentPage.value = idx;
+      progress.value = book.progress;
     }
 
     isPageLoading.value = false;
@@ -116,7 +117,6 @@ export function useTxtEngine(bookId: string) {
     if (!isNaN(pageIndex) && pageIndex >= 0 && pageIndex < totalPages.value) {
       currentPage.value = pageIndex;
       progress.value = ((pageIndex + 1) / totalPages.value) * 100;
-      localStorage.setItem(`book-txt-page-${bookId}`, pageIndex.toString());
       libraryStore.updateProgress(bookId, progress.value);
     }
   };
@@ -137,7 +137,6 @@ export function useTxtEngine(bookId: string) {
 
   const updateProgress = () => {
     progress.value = ((currentPage.value + 1) / totalPages.value) * 100;
-    localStorage.setItem(`book-txt-page-${bookId}`, currentPage.value.toString());
     libraryStore.updateProgress(bookId, progress.value);
   };
 

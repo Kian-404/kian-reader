@@ -154,11 +154,11 @@ export function usePdfEngine(bookId: string) {
     } catch (e) {
       console.error('Failed to get PDF outline', e);
     }
-    
-    const savedPage = localStorage.getItem(`book-pdf-page-${bookId}`);
-    if (savedPage) {
-      currentPage.value = parseInt(savedPage);
-      progress.value = (currentPage.value / pdfPages.value) * 100;
+    // 恢复上次阅读位置（从 IndexedDB 获取）
+    const book = libraryStore.books.find(b => b.id === bookId);
+    if (book && book.progress > 0) {
+      currentPage.value = Math.max(1, Math.round((book.progress / 100) * pdfPages.value));
+      progress.value = book.progress;
     }
 
     renderPdfPages();
@@ -213,39 +213,42 @@ export function usePdfEngine(bookId: string) {
   const handleScroll = () => {
   // 如果PDF文档不存在，则直接返回
     if (!pdfDoc.value) return;
-  // 获取所有PDF页面容器元素
-    const containers = document.querySelectorAll('.pdf-page-container');
-    let mostVisiblePage = currentPage.value; // 初始化为当前页
-    let maxVisibleArea = 0; // 记录最大可见区域面积
 
-  // 遍历所有页面容器，计算可见区域
-    containers.forEach((container: any) => {
-      const rect = container.getBoundingClientRect();
-      const visibleArea = readerStore.paginationMode === 'horizontal'
-        ? Math.min(rect.right, window.innerWidth) - Math.max(rect.left, 0)
-        : Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0);
+    // 防抖：快速滚动时只处理最后一次
+    if (pdfDebounceTimer) clearTimeout(pdfDebounceTimer);
+    pdfDebounceTimer = setTimeout(() => {
+    // 获取所有PDF页面容器元素
+      const containers = document.querySelectorAll('.pdf-page-container');
+      let mostVisiblePage = currentPage.value; // 初始化为当前页
+      let maxVisibleArea = 0; // 记录最大可见区域面积
+
+    // 遍历所有页面容器，计算可见区域
+      containers.forEach((container: any) => {
+        const rect = container.getBoundingClientRect();
+        const visibleArea = readerStore.paginationMode === 'horizontal'
+          ? Math.min(rect.right, window.innerWidth) - Math.max(rect.left, 0)
+          : Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0);
 
     // 如果当前容器的可见区域大于之前记录的最大值，则更新最大可见区域和最可见页码
-      if (visibleArea > maxVisibleArea) {
-        maxVisibleArea = visibleArea;
-        mostVisiblePage = parseInt(container.id.replace('pdf-page-container-', ''));
-      }
-    });
+        if (visibleArea > maxVisibleArea) {
+          maxVisibleArea = visibleArea;
+          mostVisiblePage = parseInt(container.id.replace('pdf-page-container-', ''));
+        }
+      });
 
-  // 如果检测到最可见页面发生变化，则更新相关状态
-    if (mostVisiblePage !== currentPage.value) {
-      currentPage.value = mostVisiblePage; // 更新当前页码
-      progress.value = (currentPage.value / pdfPages.value) * 100; // 更新阅读进度百分比
-    // 保存当前页码到本地存储
-      localStorage.setItem(`book-pdf-page-${bookId}`, currentPage.value.toString());
-    // 更新图书馆中的阅读进度
-      libraryStore.updateProgress(bookId, progress.value);
-    // 重新渲染PDF页面
-      renderPdfPages();
-    }
+    // 如果检测到最可见页面发生变化，则更新相关状态
+      if (mostVisiblePage !== currentPage.value) {
+        currentPage.value = mostVisiblePage; // 更新当前页码
+        progress.value = (currentPage.value / pdfPages.value) * 100; // 更新阅读进度百分比
+      // 更新图书馆中的阅读进度
+        libraryStore.updateProgress(bookId, progress.value);
+      // 重新渲染PDF页面
+        renderPdfPages();
+      }
+    }, 100);
   };
 
-/**
+  /**
  * 处理分页变化时的滚动行为
  * 当页面切换时，将视图滚动到当前页面的位置
  */

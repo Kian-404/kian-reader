@@ -143,7 +143,6 @@ const fonts = [
 const emit = defineEmits<{
   (e: 'pagination-change'): void;
   (e: 'size-change'): void;
-  (e: 'font-change'): void;
   (e: 'zoom-change'): void;
 }>();
 
@@ -184,7 +183,6 @@ const changeFontSize = (delta: number) => {
  */
 const changeFontFamily = (font: string) => {
   readerStore.fontFamily = font;
-  emit('font-change');
 };
 
 /**

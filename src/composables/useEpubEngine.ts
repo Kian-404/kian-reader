@@ -60,7 +60,7 @@ export function useEpubEngine(bookId: string) {
     try {
       const contents = (rendition.value as any).getContents() as any[];
       if (!contents || contents.length === 0) return;
-      const css = `body, p, span, div, h1, h2, h3, h4, h5, h6 { font-family: ${readerStore.fontFamily} !important; }`;
+      const css = `body, p, span, div, h1, h2, h3, h4, h5, h6 { font-family: ${readerStore.fontFamily} !important; line-height: ${readerStore.lineHeight} !important; }`;
       for (const content of contents) {
         if (!content?.document?.head) continue;
         const doc = content.document;
@@ -282,7 +282,7 @@ export function useEpubEngine(bookId: string) {
   };
 
   // Watch for style changes
-  watch([() => readerStore.theme, () => readerStore.fontSize, () => readerStore.fontFamily], () => {
+  watch([() => readerStore.theme, () => readerStore.fontSize, () => readerStore.fontFamily, () => readerStore.lineHeight], () => {
     updateEpubStyle();
   });
 
