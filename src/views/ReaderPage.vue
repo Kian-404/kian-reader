@@ -931,7 +931,7 @@ html.ion-palette-dark {
   display: flex;
   align-items: flex-end;
 }
-.settings-drawer .el-drawer {
+.settings-drawer.el-drawer {
   height: auto !important;
   bottom: 0;
   position: absolute;
