@@ -147,7 +147,6 @@
         v-model="showSettings" 
         title="阅读设置" 
         direction="btt" 
-        size="50%" 
         class="glass-drawer settings-drawer"
         :lock-scroll="true"
         destroy-on-close
@@ -865,6 +864,23 @@ const removeNote = (id: string) => {
 #viewer {
   width: 100%;
   height: 100%;
+}
+
+/* 阅读设置抽屉：自适应内容高度，去掉 Element Plus 默认 30% 内联高度 */
+.settings-drawer {
+  :deep(.el-drawer__wrapper) {
+    display: flex;
+    align-items: flex-end;
+  }
+  :deep(.el-drawer) {
+    height: auto !important;
+    bottom: 0;
+    position: absolute;
+  }
+  :deep(.el-drawer__body) {
+    overflow-y: visible;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 .page-indicator {
