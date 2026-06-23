@@ -4,7 +4,7 @@ import ePub, { Rendition } from 'epubjs';
 // epubjs type declarations are incomplete — cast to callable
 const createEpub = ePub as unknown as (data: ArrayBuffer) => any;
 import { useReaderStore } from '@/stores/reader';
-import { useLibraryStore } from '@/stores/library';
+import { useLibraryStore, type Note } from '@/stores/library';
 
 export function useEpubEngine(bookId: string) {
   const readerStore = useReaderStore();
@@ -78,10 +78,36 @@ export function useEpubEngine(bookId: string) {
   };
 
   /**
+   * 从 IndexedDB 恢复已保存的高亮笔记到 epubjs annotation 系统
+   * 在每次 rendered 事件后调用，确保翻页后高亮重新出现
+   */
+  const restoreHighlights = () => {
+    if (!rendition.value) return;
+    try {
+      const book = libraryStore.books.find(b => b.id === bookId);
+      if (!book || !book.notes || book.notes.length === 0) return;
+      const epubNotes = book.notes.filter((n): n is Note & { cfi: string } => !!n.cfi);
+      for (const note of epubNotes) {
+        rendition.value.annotations.add(
+          'highlight',
+          note.cfi,
+          {},
+          undefined,
+          'hl-class',
+          { fill: note.color || '#ffe082' }
+        );
+      }
+    } catch (e) {
+      console.warn('Cannot restore EPUB highlights', e);
+    }
+  };
+
+  /**
    * 更新 EPUB 样式：
    *  - 字体大小：epubjs themes.fontSize()
    *  - 字体族：直接操作 iframe DOM（避免 override 堆积）
    *  - 主题：仅 select()，永不 re-register 完整主题
+   *  - 高亮笔记：从 IndexedDB 恢复
    */
   const updateEpubStyle = () => {
     if (!rendition.value) return;
@@ -89,6 +115,8 @@ export function useEpubEngine(bookId: string) {
     rendition.value.themes.select(readerStore.theme);
     // 字体族需等 iframe 渲染完成后再注入
     requestAnimationFrame(() => injectFontFamily());
+    // 恢复持久化的高亮笔记
+    restoreHighlights();
   };
 
   const bindEpubHooks = (epub: any) => {
@@ -172,11 +200,12 @@ export function useEpubEngine(bookId: string) {
       r.themes.fontSize(readerStore.fontSize + 'px');
     });
 
-    // 翻页/渲染后：重新 apply 字体大小、主题和字体族
+    // 翻页/渲染后：重新 apply 字体大小、主题、字体族和高亮笔记
     r.on("rendered", () => {
       r.themes.fontSize(readerStore.fontSize + 'px');
       r.themes.select(readerStore.theme);
       injectFontFamily();
+      restoreHighlights();
     });
 
     const savedCfi = localStorage.getItem(`book-cfi-${bookId}`);
@@ -252,6 +281,7 @@ export function useEpubEngine(bookId: string) {
       r.themes.fontSize(readerStore.fontSize + 'px');
       r.themes.select(readerStore.theme);
       injectFontFamily();
+      restoreHighlights();
     });
     
     // 安全兜底
