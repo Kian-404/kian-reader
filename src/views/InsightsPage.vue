@@ -278,14 +278,14 @@ const formatTime = (timestamp?: number) => {
 }
 
 .stats-content {
-  --background: #f8fafc;
+  --background: #f4f7f6;
   position: relative;
 
   .glass-background {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);
-    opacity: 0.1;
+    background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+    opacity: 0.12;
     z-index: -1;
   }
 }
@@ -300,7 +300,7 @@ const formatTime = (timestamp?: number) => {
 .glass-card {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(20px);
-  border-radius: 24px;
+  border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.4);
   box-shadow: 0 8px 32px rgba(31, 38, 135, 0.07);
 }
@@ -598,8 +598,8 @@ html.ion-palette-dark .stats-content {
   --background: #121212;
 }
 html.ion-palette-dark .stats-content .glass-background {
-  background: linear-gradient(135deg, #1f0507 0%, #2a0804 100%);
-  opacity: 0.2;
+  background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+  opacity: 0.3;
 }
 html.ion-palette-dark .glass-card {
   background: rgba(40, 40, 40, 0.7);
