@@ -931,7 +931,7 @@ html.ion-palette-dark {
   display: flex;
   align-items: flex-end;
 }
-.settings-drawer.el-drawer {
+.settings-drawer .el-drawer {
   height: auto !important;
   bottom: 0;
   position: absolute;
@@ -939,5 +939,16 @@ html.ion-palette-dark {
 .settings-drawer .el-drawer__body {
   overflow-y: visible;
   padding-bottom: env(safe-area-inset-bottom);
+}
+html.ion-palette-dark .settings-drawer .el-drawer__close-btn,
+html.ion-palette-dark .settings-drawer .el-drawer__header button {
+  color: #94a3b8 !important;
+}
+html.ion-palette-dark .settings-drawer .el-drawer__close-btn:hover,
+html.ion-palette-dark .settings-drawer .el-drawer__header button:hover {
+  color: #e2e8f0 !important;
+}
+html.ion-palette-dark .settings-drawer .el-drawer__header {
+  color: #e2e8f0 !important;
 }
 </style>
