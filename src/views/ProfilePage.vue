@@ -10,30 +10,21 @@
       <div class="glass-background"></div>
       
       <div class="profile-container">
-        <!-- User Info Card -->
-        <div class="user-card glass-card">
-          <div class="avatar-section">
-            <div class="avatar-placeholder">
-              <Icon icon="solar:user-circle-linear" style="font-size: 48px" />
-            </div>
-            <div class="user-meta">
-              <h3>书虫用户</h3>
-              <p>愿每一本书都能温暖你的时光</p>
-            </div>
+        <!-- Quick Stats -->
+        <div class="stats-bar glass-card">
+          <div class="stat-item">
+            <span class="stat-value">{{ libraryStore.books.length }}</span>
+            <span class="stat-label">藏书</span>
           </div>
-          <div class="stats-row">
-            <div class="stat-item">
-              <span class="value">{{ libraryStore.books.length }}</span>
-              <span class="label">藏书</span>
-            </div>
-            <div class="stat-item">
-              <span class="value">{{ totalNotesCount }}</span>
-              <span class="label">笔记</span>
-            </div>
-            <div class="stat-item">
-              <span class="value">{{ totalBookmarksCount }}</span>
-              <span class="label">书签</span>
-            </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-value">{{ totalNotesCount }}</span>
+            <span class="stat-label">笔记</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-value">{{ totalBookmarksCount }}</span>
+            <span class="stat-label">书签</span>
           </div>
         </div>
 
@@ -179,7 +170,6 @@ const exportData = async () => {
 
     const isNative = Capacitor.isNativePlatform();
     if (isNative && Capacitor.isPluginAvailable('Filesystem') && Capacitor.isPluginAvailable('Share')) {
-      // Native 平台：写入缓存目录，再用 Share 弹窗让用户选择保存位置
       await Filesystem.writeFile({
         path: fileName,
         data: jsonStr,
@@ -197,7 +187,6 @@ const exportData = async () => {
       });
       ElMessage.success(`已导出 ${books.length} 本书`);
     } else {
-      // 浏览器降级：Blob 下载
       const blob = new Blob([jsonStr], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -259,7 +248,6 @@ const handleImport = async (event: Event) => {
     for (const bookData of data.books) {
       const { _fileDataBase64 } = bookData;
 
-      // Restore binary data
       if (_fileDataBase64) {
         const binaryStr = atob(_fileDataBase64);
         const bytes = new Uint8Array(binaryStr.length);
@@ -270,41 +258,46 @@ const handleImport = async (event: Event) => {
       }
     }
 
-    // Write metadata once after all binaries are restored
+    libraryStore.books = cleanBooks;
     await localforage.setItem('kianer-library-metadata', cleanBooks);
-
-    // 直接更新 store（initStore 已初始化过的场景会短路跳过）
-    libraryStore.books.splice(0, libraryStore.books.length, ...cleanBooks);
-
-    ElMessage.success(`成功导入 ${cleanBooks.length} 本书`);
-    target.value = '';
+    ElMessage.success(`成功恢复 ${data.books.length} 本书`);
   } catch (e) {
     console.error('Import failed:', e);
     ElMessage.error('导入失败，请检查备份文件');
+  } finally {
     target.value = '';
   }
 };
 
-const confirmClearData = () => {
-  ElMessageBox.confirm(
-    '确定要清空所有数据吗？所有导入的书籍和阅读笔记都将丢失。',
-    '极端危险操作',
-    {
-      confirmButtonText: '确定清空',
-      cancelButtonText: '取消',
-      type: 'error',
-      roundButton: true,
-      customClass: 'glass-message-box'
+const confirmClearData = async () => {
+  try {
+    const confirmed = await ElMessageBox.confirm(
+      '确定要清理所有数据吗？此操作不可恢复！',
+      '警告',
+      {
+        confirmButtonText: '确认清理',
+        cancelButtonText: '取消',
+        type: 'warning',
+        roundButton: true,
+        customClass: 'glass-message-box',
+        confirmButtonClass: 'el-button--danger',
+      }
+    ).catch(() => false);
+
+    if (!confirmed) return;
+
+    // Clear all book data from IndexedDB
+    for (const book of libraryStore.books) {
+      await localforage.removeItem(`book-data-${book.id}`);
     }
-  ).then(async () => {
-    try {
-      await localforage.clear();
-      localStorage.clear();
-      window.location.reload(); // Hard reload to reset everything
-    } catch (e) {
-      ElMessage.error('清理失败');
-    }
-  }).catch(() => {});
+    // Clear metadata
+    await localforage.removeItem('kianer-library-metadata');
+    libraryStore.books = [];
+    ElMessage.success('所有数据已清理');
+  } catch (e) {
+    console.error('Clear data failed:', e);
+    ElMessage.error('清理失败');
+  }
 };
 </script>
 
@@ -315,14 +308,14 @@ const confirmClearData = () => {
 }
 
 .profile-content {
-  --background: #f8fafc;
+  --background: #f4f7f6;
   position: relative;
 
   .glass-background {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
-    opacity: 0.1;
+    background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+    opacity: 0.12;
     z-index: -1;
   }
 }
@@ -331,139 +324,144 @@ const confirmClearData = () => {
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 22px;
 }
 
 .glass-card {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(20px);
-  border-radius: 24px;
+  border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05);
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.07);
 }
 
-.user-card {
-  padding: 25px;
-  
-  .avatar-section {
+/* ── Stats Bar ── */
+
+.stats-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 16px 10px;
+
+  .stat-item {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 20px;
-    margin-bottom: 25px;
-
-    .avatar-placeholder {
-      width: 80px;
-      height: 80px;
-      border-radius: 24px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      box-shadow: 0 10px 20px rgba(118, 75, 162, 0.2);
-    }
-
-    .user-meta {
-      h3 { margin: 0 0 5px 0; font-size: 20px; font-weight: 700; color: #1e293b; }
-      p { margin: 0; font-size: 13px; color: #64748b; }
-    }
+    gap: 4px;
   }
 
-  .stats-row {
-    display: flex;
-    justify-content: space-around;
-    padding-top: 20px;
-    border-top: 1px solid rgba(0,0,0,0.05);
+  .stat-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1e293b;
+  }
 
-    .stat-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      .value { font-size: 20px; font-weight: 800; color: #1e293b; }
-      .label { font-size: 12px; color: #64748b; margin-top: 4px; }
-    }
+  .stat-label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .stat-divider {
+    width: 1px;
+    height: 32px;
+    background: rgba(0, 0, 0, 0.08);
   }
 }
+
+/* ── Settings Group ── */
 
 .settings-group {
-  h3 { margin: 0 0 15px 10px; font-size: 16px; font-weight: 700; color: #475569; }
-  
+  h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    margin: 0 0 10px 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
   .settings-list {
     overflow: hidden;
-    
-    .setting-row {
-      padding: 18px 20px;
+  }
+
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+    -webkit-tap-highlight-color: transparent;
+
+    & + .setting-row {
+      border-top: 1px solid rgba(0, 0, 0, 0.04);
+    }
+
+    &:active {
+      background: rgba(0, 0, 0, 0.03);
+    }
+
+    .row-left {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid rgba(0,0,0,0.03);
-      cursor: pointer;
+      gap: 12px;
+      color: #334155;
+      font-size: 15px;
+      font-weight: 500;
 
-      &:last-child { border-bottom: none; }
-      &:active { background: rgba(0,0,0,0.02); }
-
-      .row-left {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-size: 15px;
-        color: #334155;
-        
-        &.danger { color: #f56c6c; }
+      &.danger {
+        color: #ef4444;
       }
+    }
 
-      .version { font-size: 13px; color: #94a3b8; }
-      .arrow { color: #cbd5e1; }
+    .arrow {
+      color: #94a3b8;
+    }
+
+    .version {
+      font-size: 13px;
+      color: #94a3b8;
     }
   }
 }
 
 .danger-zone {
   .danger-hint {
-    margin: 10px 10px 0 10px;
     font-size: 12px;
     color: #94a3b8;
+    margin: 10px 12px 0;
     line-height: 1.5;
   }
 }
 
-/* Dark Mode Overrides */
-</style>
+/* ── Dark Mode ── */
+html.ion-palette-dark {
+  .profile-toolbar {
+    --background: rgba(30, 30, 30, 0.7);
+  }
+  .profile-content {
+    --background: #121212;
+  }
+  .profile-content .glass-background {
+    background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+    opacity: 0.3;
+  }
+  .glass-card {
+    background: rgba(40, 40, 40, 0.7);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .stats-bar .stat-value { color: #e2e8f0; }
+  .stats-bar .stat-label { color: #94a3b8; }
+  .stats-bar .stat-divider { background: rgba(255, 255, 255, 0.1); }
 
-<style lang="less">
-html.ion-palette-dark .profile-toolbar {
-  --background: rgba(30, 30, 30, 0.7);
-}
-html.ion-palette-dark .profile-content {
-  --background: #121212;
-}
-html.ion-palette-dark .profile-content .glass-background {
-  background: linear-gradient(135deg, #2a1b38 0%, #1e3c72 100%);
-  opacity: 0.3;
-}
-html.ion-palette-dark .glass-card {
-  background: rgba(40, 40, 40, 0.7);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-html.ion-palette-dark .user-card .user-meta h3 {
-  color: #e2e8f0;
-}
-html.ion-palette-dark .user-card .user-meta p {
-  color: #94a3b8;
-}
-html.ion-palette-dark .user-card .stats-row .stat-item .value {
-  color: #e2e8f0;
-}
-html.ion-palette-dark .user-card .stats-row .stat-item .label {
-  color: #94a3b8;
-}
-html.ion-palette-dark .settings-group h3 {
-  color: #94a3b8;
-}
-html.ion-palette-dark .settings-list .setting-row .row-left {
-  color: #e2e8f0;
-}
-html.ion-palette-dark .settings-list .setting-row .row-left.danger {
-  color: #f56c6c;
+  .settings-group h3 { color: #94a3b8; }
+  .setting-row { border-color: rgba(255, 255, 255, 0.04); }
+  .setting-row .row-left { color: #e2e8f0; }
+  .setting-row .row-left.danger { color: #f87171; }
+  .setting-row .arrow { color: #64748b; }
+  .setting-row:active { background: rgba(255, 255, 255, 0.05); }
+  .version { color: #64748b; }
+  .danger-hint { color: #64748b; }
 }
 </style>
