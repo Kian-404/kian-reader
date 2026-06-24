@@ -10,6 +10,17 @@
       <div class="glass-background"></div>
       
       <div class="profile-container">
+        <!-- App Header -->
+        <div class="app-header glass-card">
+          <div class="app-icon">
+            <Icon icon="solar:book-linear" />
+          </div>
+          <div class="app-info">
+            <h2 class="app-name">Kianer Reader</h2>
+            <p class="app-motto">让文字温暖生活</p>
+          </div>
+        </div>
+
         <!-- Quick Stats -->
         <div class="stats-bar glass-card">
           <div class="stat-item" @click="router.push('/tabs/insights')">
@@ -25,6 +36,25 @@
           <div class="stat-item">
             <span class="stat-value">{{ totalBookmarksCount }}</span>
             <span class="stat-label">书签</span>
+          </div>
+        </div>
+
+        <!-- Storage -->
+        <div class="storage-card glass-card">
+          <h3>存储空间</h3>
+          <div class="storage-body">
+            <div class="storage-bar-track">
+              <div class="storage-bar-fill" :style="{ width: storageBarWidth + '%' }"></div>
+            </div>
+            <div class="storage-info">
+              <span class="storage-used">{{ formatSize(totalSize) }}</span>
+              <span class="storage-detail">{{ libraryStore.books.length }} 本书</span>
+            </div>
+            <div class="storage-breakdown">
+              <span v-for="item in formatBreakdown" :key="item.format" class="fmt-tag" :class="item.format">
+                {{ item.label }} {{ item.count }}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -133,6 +163,37 @@ const totalBookmarksCount = computed(() =>
   libraryStore.books.reduce((acc, b) => acc + (b.bookmarks?.length || 0), 0)
 );
 
+// ── 存储空间 ──
+
+const totalSize = computed(() =>
+  libraryStore.books.reduce((acc, b) => acc + (b.size || 0), 0)
+);
+
+/** 假设 500MB 为满容量显示参考值 */
+const MAX_STORAGE = 500 * 1024 * 1024;
+const storageBarWidth = computed(() => Math.min(100, (totalSize.value / MAX_STORAGE) * 100));
+
+const formatSize = (bytes: number): string => {
+  if (bytes === 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let i = 0;
+  let size = bytes;
+  while (size >= 1024 && i < units.length - 1) { size /= 1024; i++; }
+  return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+};
+
+interface FormatItem { format: string; label: string; count: number }
+
+const formatBreakdown = computed((): FormatItem[] => {
+  const counts: Record<string, number> = { txt: 0, epub: 0, pdf: 0 };
+  for (const b of libraryStore.books) counts[b.format] = (counts[b.format] || 0) + 1;
+  return [
+    { format: 'txt', label: 'TXT', count: counts.txt },
+    { format: 'epub', label: 'EPUB', count: counts.epub },
+    { format: 'pdf', label: 'PDF', count: counts.pdf },
+  ].filter(i => i.count > 0);
+});
+
 const exportData = async () => {
   if (isExporting.value) return;
   isExporting.value = true;
@@ -168,9 +229,19 @@ const exportData = async () => {
     const fileName = `kianer-backup-${new Date().toISOString().slice(0, 10)}.json`;
 
     if (Capacitor.isNativePlatform()) {
-      await Filesystem.writeFile({ path: fileName, data: jsonStr, directory: Directory.Cache });
+      // 写入缓存目录，获取可分享的 content:// URI
+      await Filesystem.writeFile({
+        path: fileName,
+        data: jsonStr,
+        directory: Directory.Cache,
+      });
       const { uri } = await Filesystem.getUri({ path: fileName, directory: Directory.Cache });
-      await Share.share({ title: 'Kianer Reader 备份', text: `共 ${books.length} 本书`, files: [uri], dialogTitle: '保存备份' });
+      // 只传 files，不传 text（部分 Android 版本 text + files 同时传会导致崩溃）
+      await Share.share({
+        title: 'Kianer Reader 备份',
+        files: [uri],
+        dialogTitle: `导出 ${books.length} 本书的备份`,
+      });
     } else {
       const blob = new Blob([jsonStr], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -182,7 +253,8 @@ const exportData = async () => {
     ElMessage.success(`已导出 ${books.length} 本书`);
   } catch (e) {
     console.error('Export failed:', e);
-    ElMessage.error('导出失败');
+    const msg = e instanceof Error ? e.message : String(e);
+    ElMessage.error(`导出失败: ${msg}`);
   } finally {
     isExporting.value = false;
   }
@@ -220,8 +292,7 @@ const handleImport = async (event: Event) => {
       const { _fileDataBase64 } = bookData;
       if (_fileDataBase64) {
         const binaryStr = atob(_fileDataBase64);
-        const bytes = new Uint8Array(binaryStr.length);
-        for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+        const bytes = Uint8Array.from(binaryStr, c => c.charCodeAt(0));
         await localforage.setItem(`book-data-${bookData.id}`, bytes.buffer);
       }
     }
@@ -274,7 +345,119 @@ const confirmClearData = async () => {
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 18px;
+}
+
+// ── App Header ──
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 22px 24px;
+
+  .app-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #409eff, #60a5fa);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 28px;
+    flex-shrink: 0;
+    box-shadow: 0 6px 20px rgba(64, 158, 255, 0.25);
+  }
+
+  .app-info {
+    flex: 1;
+    min-width: 0;
+
+    .app-name {
+      margin: 0 0 4px;
+      font-size: 20px;
+      font-weight: 800;
+      color: #1e293b;
+    }
+
+    .app-motto {
+      margin: 0;
+      font-size: 13px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+  }
+}
+
+
+// ── Storage ──
+
+.storage-card {
+  padding: 20px 22px;
+
+  h3 {
+    margin: 0 0 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    letter-spacing: 0.5px;
+  }
+
+  .storage-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .storage-bar-track {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+
+    .storage-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #10b981, #34d399);
+      transition: width 0.8s ease;
+    }
+  }
+
+  .storage-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .storage-used {
+      font-size: 18px;
+      font-weight: 800;
+      color: #1e293b;
+    }
+
+    .storage-detail {
+      font-size: 12px;
+      color: #64748b;
+    }
+  }
+
+  .storage-breakdown {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .fmt-tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 8px;
+    letter-spacing: 0.3px;
+
+    &.txt  { background: #fffbeb; color: #b45309; }
+    &.epub { background: #f0fdf4; color: #166534; }
+    &.pdf  { background: #fef2f2; color: #991b1b; }
+  }
 }
 
 .glass-card {
@@ -403,9 +586,19 @@ html.ion-palette-dark {
     background: rgba(40, 40, 40, 0.7);
     border-color: rgba(255, 255, 255, 0.08);
   }
+  .app-header {
+    .app-name { color: #e2e8f0; }
+    .app-motto { color: #64748b; }
+  }
   .stats-bar .stat-value { color: #e2e8f0; }
   .stats-bar .stat-label { color: #94a3b8; }
   .stats-bar .stat-divider { background: rgba(255, 255, 255, 0.1); }
+  .storage-card .storage-bar-track { background: #334155; }
+  .storage-card .storage-used { color: #e2e8f0; }
+  .storage-card .storage-detail { color: #64748b; }
+  .fmt-tag.txt  { background: rgba(251, 191, 36, 0.12); color: #fbbf24; }
+  .fmt-tag.epub { background: rgba(52, 211, 153, 0.12); color: #34d399; }
+  .fmt-tag.pdf  { background: rgba(248, 113, 113, 0.12); color: #f87171; }
   .settings-group h3 { color: #94a3b8; }
   .setting-row { border-color: rgba(255, 255, 255, 0.04); }
   .setting-row .row-left { color: #e2e8f0; }
