@@ -12,7 +12,7 @@
       <div class="profile-container">
         <!-- Quick Stats -->
         <div class="stats-bar glass-card">
-          <div class="stat-item" @click="router.push('/tabs/tab2')">
+          <div class="stat-item" @click="router.push('/tabs/insights')">
             <span class="stat-value">{{ libraryStore.books.length }}</span>
             <span class="stat-label">藏书</span>
           </div>

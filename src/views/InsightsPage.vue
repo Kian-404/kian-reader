@@ -34,44 +34,6 @@
           </div>
         </div>
 
-        <!-- Reading Stats -->
-        <div class="insights-section glass-card reading-stats-card">
-          <h3>阅读时长</h3>
-          <div class="reading-stats-grid">
-            <div class="reading-stat-item">
-              <span class="stat-value highlight">{{ formatMinutes(readingStats.todayMinutes) }}</span>
-              <span class="stat-label">今日阅读</span>
-              <Icon icon="solar:clock-circle-linear" class="stat-icon" />
-            </div>
-            <div class="reading-stat-item">
-              <span class="stat-value">{{ readingStats.currentStreak }}<small> 天</small></span>
-              <span class="stat-label">连续阅读</span>
-              <Icon icon="solar:fire-linear" class="stat-icon" />
-            </div>
-            <div class="reading-stat-item">
-              <span class="stat-value">{{ formatMinutes(readingStats.totalMinutes) }}</span>
-              <span class="stat-label">累计阅读</span>
-              <Icon icon="solar:clock-square-linear" class="stat-icon" />
-            </div>
-          </div>
-          <div v-if="hasWeeklyData" class="weekly-trend">
-            <h4>本周趋势</h4>
-            <div class="weekly-bars">
-              <div v-for="day in readingStats.weeklyMinutes" :key="day.date" class="bar-column">
-                <div class="bar-wrapper">
-                  <div
-                    class="bar-fill"
-                    :class="{ today: day.label === '今天' }"
-                    :style="{ height: barHeight(day.minutes) }"
-                  ></div>
-                </div>
-                <span class="bar-label">{{ day.label }}</span>
-                <span v-if="day.minutes > 0" class="bar-value">{{ day.minutes }}<small>m</small></span>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- Format Distribution -->
         <div class="insights-section glass-card">
           <h3>藏书构成</h3>
@@ -201,15 +163,12 @@ import {
 } from '@ionic/vue';
 import { Icon } from '@iconify/vue';
 import { useLibraryStore } from '@/stores/library';
-import { useReadingStatsStore } from '@/stores/readingStats';
 import { useRouter } from 'vue-router';
 const libraryStore = useLibraryStore();
-const readingStats = useReadingStatsStore();
 const router = useRouter();
 
 onMounted(async () => {
   await libraryStore.initStore();
-  await readingStats.initStore();
 });
 
 // ── 阅读状态统计 ──
@@ -311,28 +270,6 @@ const formatTime = (timestamp?: number) => {
   return new Date(timestamp).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
 };
 
-// ── 阅读时长辅助函数 ──
-
-/** 格式化分钟数为可读字符串 */
-const formatMinutes = (m: number): string => {
-  if (m < 1) return '0';
-  if (m < 60) return `${m}分钟`;
-  const h = Math.floor(m / 60);
-  const remainder = m % 60;
-  return remainder > 0 ? `${h}小时${remainder}分钟` : `${h}小时`;
-};
-
-/** 计算柱状图高度 (最大 80px) */
-const maxWeeklyMinutes = computed(() =>
-  Math.max(1, ...readingStats.weeklyMinutes.map(d => d.minutes))
-);
-const barHeight = (minutes: number) => {
-  const pct = (minutes / maxWeeklyMinutes.value) * 80;
-  return `${Math.max(4, pct)}px`;
-};
-const hasWeeklyData = computed(() =>
-  readingStats.weeklyMinutes.some(d => d.minutes > 0)
-);
 </script>
 
 <style scoped lang="less">
@@ -395,120 +332,6 @@ const hasWeeklyData = computed(() =>
       transition: opacity 0.3s;
     }
     .icon-off { color: #94a3b8; }
-  }
-}
-
-// ── Reading Stats ──
-
-.reading-stats-card {
-  h4 {
-    margin: 0 0 14px 0;
-    font-size: 13px;
-    font-weight: 600;
-    color: #64748b;
-    letter-spacing: 0.3px;
-  }
-}
-
-.reading-stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
-
-  .reading-stat-item {
-    text-align: center;
-    padding: 14px 8px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.4);
-    position: relative;
-    overflow: hidden;
-
-    .stat-value {
-      display: block;
-      font-size: 18px;
-      font-weight: 800;
-      color: #1e293b;
-      line-height: 1.3;
-
-      small { font-size: 12px; font-weight: 600; color: #64748b; }
-
-      &.highlight { color: #409eff; }
-    }
-
-    .stat-label {
-      display: block;
-      font-size: 11px;
-      color: #94a3b8;
-      margin-top: 2px;
-      font-weight: 500;
-    }
-
-    .stat-icon {
-      position: absolute;
-      right: -4px;
-      bottom: -4px;
-      font-size: 48px;
-      opacity: 0.06;
-    }
-  }
-}
-
-.weekly-trend {
-  margin-top: 20px;
-  padding-top: 18px;
-  border-top: 1px solid rgba(0, 0, 0, 0.04);
-}
-
-.weekly-bars {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 6px;
-
-  .bar-column {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    min-width: 0;
-  }
-
-  .bar-wrapper {
-    width: 100%;
-    max-width: 40px;
-    height: 80px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-  }
-
-  .bar-fill {
-    width: 100%;
-    max-width: 28px;
-    border-radius: 6px 6px 2px 2px;
-    background: linear-gradient(180deg, #409eff, #60a5fa);
-    min-height: 4px;
-    transition: height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-
-    &.today {
-      background: linear-gradient(180deg, #f59e0b, #fbbf24);
-      box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
-    }
-  }
-
-  .bar-label {
-    font-size: 10px;
-    font-weight: 600;
-    color: #94a3b8;
-  }
-
-  .bar-value {
-    font-size: 10px;
-    font-weight: 700;
-    color: #475569;
-
-    small { font-weight: 500; color: #94a3b8; }
   }
 }
 

@@ -8,12 +8,12 @@
           <ion-label>书架</ion-label>
         </ion-tab-button>
 
-        <ion-tab-button tab="tab2" href="/tabs/tab2">
+        <ion-tab-button tab="insights" href="/tabs/insights">
           <ion-icon aria-hidden="true" :icon="statsChartOutline" />
           <ion-label>洞察</ion-label>
         </ion-tab-button>
 
-        <ion-tab-button tab="tab3" href="/tabs/tab3">
+        <ion-tab-button tab="profile" href="/tabs/profile">
           <ion-icon aria-hidden="true" :icon="personOutline" />
           <ion-label>我的</ion-label>
         </ion-tab-button>
