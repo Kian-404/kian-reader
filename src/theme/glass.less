@@ -113,7 +113,19 @@
 .el-drawer.glass-drawer {
   --el-drawer-bg-color: rgba(255, 255, 255, 0.8) !important;
   backdrop-filter: blur(20px) !important;
-  border-radius: 24px 24px 0 0 !important;
+
+  // 从左弹出（目录、书签、笔记）：左上角取消圆角，贴边不露下层
+  &.ltr {
+    border-radius: 0 24px 24px 0 !important;
+  }
+  // 从右弹出（全文搜索）：右上角取消圆角
+  &.rtl {
+    border-radius: 24px 0 0 24px !important;
+  }
+  // 从下弹出（阅读设置）：保持上圆角
+  &.btt {
+    border-radius: 24px 24px 0 0 !important;
+  }
   
   .el-drawer__header {
     margin-bottom: 0 !important;
