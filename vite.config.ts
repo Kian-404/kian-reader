@@ -15,12 +15,13 @@ export default defineConfig({
     vue(),
     legacy(),
     AutoImport({
-      resolvers: [ElementPlusResolver()],
+      resolvers: [ElementPlusResolver({ importStyle: !process.env.VITEST })],
     }),
     Components({
-      resolvers: [ElementPlusResolver()],
+      resolvers: [ElementPlusResolver({ importStyle: !process.env.VITEST })],
     }),
-    ElementPlus({}),
+    // Skip element-plus CSS injection during test (Node.js can't load .css)
+    ...(process.env.VITEST ? [] : [ElementPlus({})]),
   ],
   resolve: {
     alias: {
