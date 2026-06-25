@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.ionic.starter',
+  appId: 'kianer.app.reader',
   appName: 'Kianer',
   webDir: 'dist'
 };
