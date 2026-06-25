@@ -4,6 +4,9 @@
       <ion-toolbar class="library-toolbar">
         <ion-title>我的书架</ion-title>
         <ion-buttons slot="end">
+          <el-button circle @click="goWifiTransfer" class="add-btn-mini" style="margin-right: 6px">
+            <Icon icon="solar:notebook-square-broken" width="22" height="22" />
+          </el-button>
           <el-button circle @click="triggerFileInput" class="add-btn-mini">
             <Icon icon="solar:import-linear" width="24" height="24" />
           </el-button>
@@ -129,11 +132,20 @@ import { useLibraryStore, type Book } from '../stores/library';
 import { extractMetadata } from '../utils/parser';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useRouter } from 'vue-router';
+import { Capacitor } from '@capacitor/core';
 
 const libraryStore = useLibraryStore();
 const router = useRouter();
 const searchQuery = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
+
+const goWifiTransfer = () => {
+  if (!Capacitor.isNativePlatform()) {
+    ElMessage.info('Wi-Fi 传书功能仅支持 Android 设备');
+    return;
+  }
+  router.push('/wifi-transfer');
+};
 
 const filteredBooks = computed(() => {
   const query = searchQuery.value.toLowerCase().trim();

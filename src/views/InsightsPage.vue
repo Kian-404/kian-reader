@@ -34,27 +34,6 @@
           </div>
         </div>
 
-        <!-- Format Distribution -->
-        <div class="insights-section glass-card">
-          <h3>藏书构成</h3>
-          <div class="format-grid">
-            <div v-for="fmt in formatStats" :key="fmt.format" class="format-row">
-              <div class="format-info">
-                <span class="format-badge" :class="fmt.format">{{ fmt.label }}</span>
-                <span class="format-count">{{ fmt.count }} 本</span>
-              </div>
-              <div class="format-bar-track">
-                <div
-                  class="format-bar-fill"
-                  :class="fmt.format"
-                  :style="{ width: fmt.percent + '%' }"
-                ></div>
-              </div>
-              <span class="format-percent">{{ Math.round(fmt.percent) }}%</span>
-            </div>
-          </div>
-        </div>
-
         <!-- Reading Progress -->
         <div class="insights-section glass-card">
           <h3>阅读进度</h3>
@@ -208,27 +187,6 @@ const progressRingColor = computed(() => {
   return '#94a3b8';
 });
 
-// ── 格式分布 ──
-
-interface FormatStat {
-  format: string;
-  label: string;
-  count: number;
-  percent: number;
-}
-
-const formatStats = computed((): FormatStat[] => {
-  const total = libraryStore.books.length || 1;
-  const counts: Record<string, number> = { txt: 0, epub: 0, pdf: 0 };
-  for (const b of libraryStore.books) {
-    counts[b.format] = (counts[b.format] || 0) + 1;
-  }
-  return [
-    { format: 'txt', label: 'TXT 文本', count: counts.txt, percent: (counts.txt / total) * 100 },
-    { format: 'epub', label: 'EPUB 电子书', count: counts.epub, percent: (counts.epub / total) * 100 },
-    { format: 'pdf', label: 'PDF 文档', count: counts.pdf, percent: (counts.pdf / total) * 100 },
-  ];
-});
 
 const totalSize = computed(() =>
   libraryStore.books.reduce((acc, b) => acc + (b.size || 0), 0)
@@ -340,68 +298,6 @@ const formatTime = (timestamp?: number) => {
 .insights-section {
   padding: 22px;
   h3 { margin: 0 0 18px 0; font-size: 17px; font-weight: 700; color: #334155; }
-}
-
-.format-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-
-  .format-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-
-    .format-info {
-      width: 100px;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .format-badge {
-      font-size: 11px;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 6px;
-      letter-spacing: 0.3px;
-
-      &.txt  { background: #fffbeb; color: #b45309; }
-      &.epub { background: #f0fdf4; color: #166534; }
-      &.pdf  { background: #fef2f2; color: #991b1b; }
-    }
-
-    .format-count { font-size: 13px; color: #475569; font-weight: 500; white-space: nowrap; }
-
-    .format-bar-track {
-      flex: 1;
-      height: 8px;
-      background: #e5e7eb;
-      border-radius: 10px;
-      overflow: hidden;
-      min-width: 60px;
-
-      .format-bar-fill {
-        height: 100%;
-        border-radius: 10px;
-        transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-
-        &.txt  { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-        &.epub { background: linear-gradient(90deg, #10b981, #34d399); }
-        &.pdf  { background: linear-gradient(90deg, #ef4444, #f87171); }
-      }
-    }
-
-    .format-percent {
-      width: 36px;
-      text-align: right;
-      font-size: 12px;
-      font-weight: 600;
-      color: #64748b;
-      flex-shrink: 0;
-    }
-  }
 }
 
 // ── Ring Progress ──
@@ -619,9 +515,6 @@ html.ion-palette-dark .ring-label { fill: #94a3b8 !important; }
 html.ion-palette-dark .progress-ring circle:first-child { stroke: #334155; }
 html.ion-palette-dark .legend-item { color: #cbd5e1; }
 html.ion-palette-dark .legend-count { color: #e2e8f0; }
-html.ion-palette-dark .format-count { color: #94a3b8; }
-html.ion-palette-dark .format-percent { color: #94a3b8; }
-html.ion-palette-dark .format-bar-track { background: #334155; }
 html.ion-palette-dark .total-size { color: #64748b; }
 html.ion-palette-dark .recent-section .no-recent { color: #64748b; }
 html.ion-palette-dark .recent-item .recent-info .title { color: #e2e8f0; }

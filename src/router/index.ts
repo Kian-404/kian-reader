@@ -32,6 +32,10 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/reader/:id',
     component: () => import('@/views/ReaderPage.vue')
+  },
+  {
+    path: '/wifi-transfer',
+    component: () => import('@/views/WifiTransferPage.vue')
   }
 ]
 

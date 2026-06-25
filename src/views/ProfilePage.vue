@@ -233,8 +233,16 @@ const exportData = async () => {
     if (Capacitor.isNativePlatform()) {
       // 压缩 JSON 避免 Android Bridge 大数据限制导致 writeFile 失败
       const compressed = pako.gzip(jsonStr);
-      const binaryStr = String.fromCharCode(...compressed);
-      const base64Data = btoa(binaryStr);
+      // FileReader 分块读取，避免 String.fromCharCode(...) 对大数组爆栈
+      const blob = new Blob([compressed]);
+      const base64Data = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(',')[1]); // 去掉 "data:...;base64," 前缀
+        };
+        reader.readAsDataURL(blob);
+      });
 
       await Filesystem.writeFile({
         path: fileName,
