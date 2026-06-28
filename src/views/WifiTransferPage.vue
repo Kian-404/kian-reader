@@ -12,17 +12,19 @@
     </ion-header>
 
     <ion-content :fullscreen="true" class="transfer-content">
-      <div class="glass-background"></div>
+      <div class="bg-decor"></div>
 
-      <div class="transfer-container">
-        <!-- 未启动状态 -->
-        <div v-if="!isRunning" class="start-card glass-card">
-          <div class="start-icon">
-            <Icon icon="solar:wifi-linear" style="font-size: 64px" />
+      <div class="page-body">
+
+        <!-- ===== 未开始 ===== -->
+        <div v-if="!isRunning" class="welcome-card">
+          <div class="welcome-icon">
+            <Icon icon="solar:wifi-linear" style="font-size: 56px" />
           </div>
-          <h2 class="start-title">Wi-Fi 传书</h2>
-          <p class="start-desc">
-            在手机上启动服务器后，用同一局域网下的电脑浏览器打开显示的地址，即可上传书籍文件。
+          <h2 class="welcome-title">无线传书</h2>
+          <p class="welcome-desc">
+            用电脑把电子书传到手机上，<br />
+            不用数据线，不用装任何软件。
           </p>
           <el-button
             type="primary"
@@ -33,49 +35,71 @@
             class="start-btn"
           >
             <Icon icon="solar:play-circle-linear" style="margin-right: 6px" />
-            启动服务器
+            开始传书
           </el-button>
+
+          <div class="steps">
+            <div class="step">
+              <span class="step-num">1</span>
+              <span class="step-text">点一下「开始传书」</span>
+            </div>
+            <div class="step-arrow">
+              <Icon icon="solar:alt-arrow-down-linear" />
+            </div>
+            <div class="step">
+              <span class="step-num">2</span>
+              <span class="step-text">在电脑浏览器输入出现的地址</span>
+            </div>
+            <div class="step-arrow">
+              <Icon icon="solar:alt-arrow-down-linear" />
+            </div>
+            <div class="step">
+              <span class="step-num">3</span>
+              <span class="step-text">选书上传，自动导入到书架</span>
+            </div>
+          </div>
         </div>
 
-        <!-- 运行中状态 -->
-        <div v-else class="running-section">
-          <!-- 连接信息卡片 -->
-          <div class="connection-card glass-card">
-            <div class="connection-header">
-              <div class="status-dot pulse"></div>
-              <span class="status-text">服务器运行中</span>
-            </div>
+        <!-- ===== 已开始 ===== -->
+        <div v-else class="active-section">
 
-            <div class="url-card" @click="copyAddress">
-              <div class="url-label">连接地址</div>
-              <div class="url-value">{{ serverUrl }}</div>
-              <div class="url-hint">点击复制地址</div>
+          <!-- 地址卡片 -->
+          <div class="address-card">
+            <div class="address-badge">
+              <span class="dot-pulse"></span>
+              就绪
             </div>
-
-            <div class="info-row">
-              <div class="info-item">
-                <span class="info-label">IP 地址</span>
-                <span class="info-value">{{ serverInfo.ip }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">端口</span>
-                <span class="info-value">{{ serverInfo.port }}</span>
-              </div>
+            <div class="address-box" @click="copyAddress">
+              <div class="address-label">在电脑浏览器输入这个地址</div>
+              <div class="address-value">{{ serverUrl }}</div>
+              <div class="address-hint">点击复制地址</div>
             </div>
+          </div>
 
-            <div class="usage-hint">
-              <Icon icon="solar:info-circle-linear" style="font-size: 16px" />
-              <span>在电脑浏览器打开上方地址，拖拽或选择文件上传</span>
+          <!-- 操作指引 -->
+          <div class="guide-card">
+            <div class="guide-title">接下来怎么做</div>
+            <div class="guide-step">
+              <span class="guide-num">1</span>
+              <span>打开电脑，连上同一个 Wi-Fi</span>
+            </div>
+            <div class="guide-step">
+              <span class="guide-num">2</span>
+              <span>打开 Chrome / Edge / Safari</span>
+            </div>
+            <div class="guide-step">
+              <span class="guide-num">3</span>
+              <span>输入上面的地址，上传电子书</span>
             </div>
           </div>
 
           <!-- 已上传文件 -->
-          <div class="files-section glass-card">
+          <div class="files-card">
             <div class="files-header">
-              <h3>已上传文件</h3>
+              <span>收到的电子书</span>
               <div class="files-actions">
-                <el-button text size="small" @click="refreshFiles" style="margin-right: 4px">
-                  <Icon icon="solar:refresh-linear" /> 刷新
+                <el-button text size="small" @click="refreshFiles">
+                  <Icon icon="solar:refresh-linear" style="margin-right: 3px" />刷新
                 </el-button>
                 <el-button
                   v-if="uploadedFiles.length > 0"
@@ -89,35 +113,34 @@
               </div>
             </div>
 
-            <div v-if="uploadedFiles.length === 0" class="no-files">
-              <Icon icon="solar:export-linear" style="font-size: 36px; opacity: 0.3" />
-              <p>暂无上传文件，上传后将在此处显示</p>
+            <div v-if="uploadedFiles.length === 0" class="files-empty">
+              <Icon icon="solar:upload-linear" style="font-size: 32px; opacity: 0.25" />
+              <p>等电脑上传文件后会出现在这里</p>
             </div>
 
-            <div v-else class="file-list">
+            <div v-else class="files-list">
               <div
                 v-for="(f, i) in uploadedFiles"
                 :key="i"
-                class="file-item"
-                :class="{ imported: f.imported, failed: f.error }"
+                class="file-row"
+                :class="{ done: f.imported, fail: f.error }"
               >
                 <Icon
                   :icon="getFileIcon(f.name)"
                   style="font-size: 20px"
-                  :class="'file-icon-' + getFileExt(f.name)"
+                  :class="'ext-' + getFileExt(f.name)"
                 />
-                <div class="file-info">
+                <div class="file-meta">
                   <span class="file-name">{{ f.name }}</span>
-                  <span v-if="f.imported" class="file-status ok">已导入</span>
-                  <span v-else-if="f.error" class="file-status fail">{{ f.error }}</span>
-                  <span v-else-if="f.importing" class="file-status uploading">导入中...</span>
-                  <span v-else class="file-status new">待导入</span>
+                  <span v-if="f.imported" class="file-tag ok">已导入</span>
+                  <span v-else-if="f.error" class="file-tag err">{{ f.error }}</span>
+                  <span v-else-if="f.importing" class="file-tag ing">导入中…</span>
+                  <span v-else class="file-tag wait">等待导入</span>
                 </div>
                 <el-button
                   v-if="!f.imported && !f.importing && !f.error"
                   text
                   size="small"
-                  :loading="f.importing"
                   @click="importFile(i)"
                 >
                   导入
@@ -134,14 +157,10 @@
             </div>
           </div>
 
-          <!-- 停止服务器 -->
-          <el-button
-            round
-            class="stop-btn"
-            @click="stopServer"
-          >
+          <!-- 关闭 -->
+          <el-button round class="stop-btn" @click="stopServer">
             <Icon icon="solar:close-circle-linear" style="margin-right: 6px" />
-            关闭服务器
+            完成传书
           </el-button>
         </div>
       </div>
@@ -152,12 +171,7 @@
 <script setup lang="ts">
 import { ref, onUnmounted, computed } from 'vue';
 import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonButtons,
+  IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons,
 } from '@ionic/vue';
 import { Icon } from '@iconify/vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -175,9 +189,16 @@ const isStarting = ref(false);
 const isRunning = ref(false);
 const isImportingAll = ref(false);
 const serverInfo = ref({ ip: '', port: 0 });
-const uploadedFiles = ref<Array<{ name: string; path: string; imported: boolean; importing: boolean; error?: string }>>([]);
-
+const uploadedFiles = ref<WifiFile[]>([]);
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+interface WifiFile {
+  name: string;
+  path: string;
+  imported: boolean;
+  importing: boolean;
+  error?: string;
+}
 
 const serverUrl = computed(() => {
   if (serverInfo.value.ip && serverInfo.value.port) {
@@ -193,17 +214,15 @@ const startServer = async () => {
     ElMessage.warning('Wi-Fi 传书仅支持 Android 设备');
     return;
   }
-
   isStarting.value = true;
   try {
     const info = await startWifiServer(8080);
     serverInfo.value = info;
     isRunning.value = true;
-    ElMessage.success('服务器已启动');
+    ElMessage.success('已就绪，可以传书了');
     startPolling();
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    ElMessage.error(`启动失败: ${msg}`);
+    ElMessage.error('启动失败，请重试');
   } finally {
     isStarting.value = false;
   }
@@ -211,9 +230,9 @@ const startServer = async () => {
 
 const stopServer = async () => {
   const confirmed = await ElMessageBox.confirm(
-    '关闭服务器后，正在进行的传输将中断。',
-    '确认关闭',
-    { confirmButtonText: '关闭', cancelButtonText: '取消', type: 'info', roundButton: true, customClass: 'glass-message-box' }
+    '关闭后电脑将无法继续上传，确定吗？',
+    '结束传书',
+    { confirmButtonText: '确定', cancelButtonText: '取消', type: 'info', roundButton: true, customClass: 'glass-message-box' }
   ).catch(() => false);
   if (!confirmed) return;
 
@@ -223,10 +242,9 @@ const stopServer = async () => {
     serverInfo.value = { ip: '', port: 0 };
     uploadedFiles.value = [];
     stopPolling();
-    ElMessage.success('服务器已关闭');
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    ElMessage.error(`关闭失败: ${msg}`);
+    ElMessage.success('已关闭');
+  } catch {
+    ElMessage.error('关闭失败');
   }
 };
 
@@ -247,43 +265,29 @@ const startPolling = () => {
         stopPolling();
         return;
       }
-      // 更新文件列表，只显示电子书文件
       let newCount = 0;
       for (const filePath of status.files) {
         const name = filePath.split('/').pop() || 'unknown';
-        // 过滤：只接受 .epub .pdf .txt
         if (!/\.(epub|pdf|txt)$/i.test(name)) continue;
         if (!uploadedFiles.value.some(f => f.path === filePath)) {
-          uploadedFiles.value.push({
-            name,
-            path: filePath,
-            imported: false,
-            importing: false,
-          });
+          uploadedFiles.value.push({ name, path: filePath, imported: false, importing: false });
           newCount++;
         }
       }
-      // 仅在有新文件时提示一次
       if (newCount > 0) {
-        ElMessage.success(`已收到 ${newCount} 个文件`);
+        ElMessage.success(`收到 ${newCount} 本电子书`);
       }
-    } catch {
-      // 轮询失败忽略（网络波动等）
-    }
+    } catch { /* ignore */ }
   }, 3000);
 };
 
 const stopPolling = () => {
-  if (pollTimer) {
-    clearInterval(pollTimer);
-    pollTimer = null;
-  }
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
 };
 
 const importFile = async (index: number) => {
   const file = uploadedFiles.value[index];
   if (!file || file.importing) return;
-
   file.importing = true;
   try {
     const result = await importFileToStore(file.path);
@@ -295,7 +299,7 @@ const importFile = async (index: number) => {
       file.error = result.error || '导入失败';
     }
   } catch (e) {
-    file.error = e instanceof Error ? e.message : '导入失败';
+    file.error = '导入失败';
   } finally {
     file.importing = false;
   }
@@ -304,25 +308,14 @@ const importFile = async (index: number) => {
 const importAllFiles = async () => {
   isImportingAll.value = true;
   const pending = uploadedFiles.value.filter(f => !f.imported && !f.importing);
-  let successCount = 0;
-  let failCount = 0;
-
+  let ok = 0, fail = 0;
   for (const file of pending) {
     const idx = uploadedFiles.value.indexOf(file);
     await importFile(idx);
-    if (uploadedFiles.value[idx].imported) {
-      successCount++;
-    } else {
-      failCount++;
-    }
+    if (uploadedFiles.value[idx].imported) ok++; else fail++;
   }
-
-  if (successCount > 0) {
-    ElMessage.success(`成功导入 ${successCount} 本`);
-  }
-  if (failCount > 0) {
-    ElMessage.warning(`${failCount} 本导入失败`);
-  }
+  if (ok > 0) ElMessage.success(`成功导入 ${ok} 本`);
+  if (fail > 0) ElMessage.warning(`${fail} 本导入失败`);
   isImportingAll.value = false;
 };
 
@@ -335,339 +328,155 @@ const refreshFiles = async () => {
       const name = filePath.split('/').pop() || 'unknown';
       if (!/\.(epub|pdf|txt)$/i.test(name)) continue;
       if (!uploadedFiles.value.some(f => f.path === filePath)) {
-        uploadedFiles.value.push({
-          name,
-          path: filePath,
-          imported: false,
-          importing: false,
-        });
+        uploadedFiles.value.push({ name, path: filePath, imported: false, importing: false });
         newCount++;
       }
     }
-    if (newCount > 0) {
-      ElMessage.success(`已收到 ${newCount} 个文件`);
-    } else if (uploadedFiles.value.length === 0) {
-      ElMessage.info('暂无文件');
-    }
-  } catch (e) {
-    console.error('refreshFiles error:', e);
-  }
+    if (newCount > 0) ElMessage.success(`收到 ${newCount} 本`);
+    else if (uploadedFiles.value.length === 0) ElMessage.info('还没有文件');
+  } catch { /* ignore */ }
 };
 
-const getFileExt = (name: string) => {
-  const ext = name.split('.').pop()?.toLowerCase() || '';
-  return ext;
-};
-
+const getFileExt = (name: string) => (name.split('.').pop()?.toLowerCase() || '');
 const getFileIcon = (name: string) => {
   const ext = getFileExt(name);
   if (ext === 'epub') return 'solar:notebook-linear';
   if (ext === 'pdf') return 'solar:file-pdf-linear';
-  if (ext === 'txt') return 'solar:document-text-linear';
   return 'solar:document-text-linear';
 };
 
 onUnmounted(() => {
   stopPolling();
-  // 离开页面时自动关闭服务器，防止端口被占用
   stopWifiServer().catch(() => {});
 });
 </script>
 
 <style scoped lang="less">
 .transfer-toolbar {
-  --background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
+  --background: #fff;
 }
-
 .transfer-content {
   --background: #f4f7f6;
-  position: relative;
-
-  .glass-background {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
-    opacity: 0.12;
-    z-index: -1;
-  }
 }
-
-.glass-card {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.07);
+.bg-decor {
+  position: fixed; inset: 0; z-index: -1;
+  background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+  opacity: 0.1;
 }
-
-.transfer-container {
-  padding: 20px;
+.page-body {
+  padding: 24px 20px;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 20px;
-  align-items: center;
 }
 
-// ── Start Card ──
-
-.start-card {
-  width: 100%;
-  max-width: 400px;
-  padding: 48px 32px;
+/* ── 开始前 ── */
+.welcome-card {
+  width: 100%; max-width: 380px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 40px 28px;
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+}
+.welcome-icon { color: #409eff; margin-bottom: 8px; }
+.welcome-title { font-size: 22px; font-weight: 700; color: #1e293b; margin: 0 0 8px; }
+.welcome-desc {
+  font-size: 14px; color: #64748b; line-height: 1.7; margin: 0 0 20px;
+}
+.start-btn { padding: 0 32px; }
 
-  .start-icon {
-    color: #409eff;
-    opacity: 0.8;
-  }
+.steps {
+  margin-top: 28px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.step {
+  display: flex; align-items: center; gap: 10px;
+  background: #f8fafc; border-radius: 12px; padding: 10px 18px;
+  width: 100%; box-sizing: border-box;
+}
+.step-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: #409eff; color: #fff; font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.step-text { font-size: 13px; color: #334155; font-weight: 500; }
+.step-arrow { color: #94a3b8; font-size: 14px; }
 
-  .start-title {
-    font-size: 22px;
-    font-weight: 800;
-    color: #1e293b;
-    margin: 0;
-  }
-
-  .start-desc {
-    font-size: 14px;
-    color: #64748b;
-    line-height: 1.6;
-    margin: 0;
-    max-width: 320px;
-  }
-
-  .start-btn {
-    margin-top: 12px;
-    padding: 0 28px;
-  }
+/* ── 已开始 ── */
+.active-section {
+  width: 100%; max-width: 420px;
+  display: flex; flex-direction: column; gap: 16px; align-items: center;
 }
 
-// ── Running Section ──
-
-.running-section {
+.address-card {
   width: 100%;
-  max-width: 420px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  align-items: center;
+  background: #fff; border-radius: 20px; padding: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
 }
+.address-badge {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 600; color: #10b981; margin-bottom: 16px;
+}
+.dot-pulse {
+  width: 8px; height: 8px; border-radius: 50%; background: #10b981;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
-.connection-card {
+.address-box {
+  background: rgba(64,158,255,0.05); border: 1px solid rgba(64,158,255,0.12);
+  border-radius: 14px; padding: 16px; text-align: center; cursor: pointer;
+}
+.address-label { font-size: 12px; color: #64748b; margin-bottom: 6px; }
+.address-value {
+  font-size: 18px; font-weight: 700; color: #409eff;
+  letter-spacing: 0.5px; word-break: break-all;
+}
+.address-hint { font-size: 11px; color: #94a3b8; margin-top: 6px; }
+
+.guide-card {
   width: 100%;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-
-  .connection-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .status-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #10b981;
-    flex-shrink: 0;
-
-    &.pulse {
-      animation: pulse 2s infinite;
-    }
-  }
-
-  .status-text {
-    font-size: 15px;
-    font-weight: 600;
-    color: #10b981;
-  }
-
-  .url-card {
-    background: rgba(64, 158, 255, 0.06);
-    border: 1px solid rgba(64, 158, 255, 0.15);
-    border-radius: 14px;
-    padding: 16px;
-    text-align: center;
-    cursor: pointer;
-    transition: background 0.2s;
-
-    &:hover {
-      background: rgba(64, 158, 255, 0.1);
-    }
-
-    &:active {
-      transform: scale(0.98);
-    }
-
-    .url-label {
-      font-size: 12px;
-      color: #64748b;
-      margin-bottom: 6px;
-    }
-
-    .url-value {
-      font-size: 18px;
-      font-weight: 800;
-      color: #409eff;
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      letter-spacing: 0.5px;
-    }
-
-    .url-hint {
-      font-size: 11px;
-      color: #94a3b8;
-      margin-top: 6px;
-    }
-  }
-
-  .info-row {
-    display: flex;
-    gap: 12px;
-
-    .info-item {
-      flex: 1;
-      background: rgba(0, 0, 0, 0.02);
-      border-radius: 12px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      align-items: center;
-
-      .info-label {
-        font-size: 11px;
-        color: #94a3b8;
-      }
-
-      .info-value {
-        font-size: 16px;
-        font-weight: 700;
-        color: #1e293b;
-        font-family: 'SF Mono', 'Fira Code', monospace;
-      }
-    }
-  }
-
-  .usage-hint {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: #94a3b8;
-    line-height: 1.5;
-  }
+  background: #fff; border-radius: 20px; padding: 20px 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+}
+.guide-title { font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 12px; }
+.guide-step {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 0; font-size: 13px; color: #475569;
+}
+.guide-num {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #f1f5f9; color: #64748b; font-size: 11px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 
-// ── Files Section ──
-
-.files-section {
+/* ── 文件列表 ── */
+.files-card {
   width: 100%;
-  padding: 20px;
-
-  .files-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-
-    h3 {
-      margin: 0;
-      font-size: 16px;
-      font-weight: 700;
-      color: #334155;
-    }
-
-    .files-actions {
-      display: flex;
-      align-items: center;
-    }
-  }
-
-  .no-files {
-    padding: 32px;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    color: #94a3b8;
-    font-size: 13px;
-
-    p {
-      margin: 0;
-    }
-  }
-
-  .file-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-
-    .file-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 14px;
-      border-radius: 12px;
-      background: rgba(0, 0, 0, 0.02);
-      transition: background 0.2s;
-
-      &:hover {
-        background: rgba(0, 0, 0, 0.04);
-      }
-
-      &.imported {
-        opacity: 0.6;
-      }
-
-      .file-icon-epub { color: #10b981; }
-      .file-icon-pdf { color: #ef4444; }
-      .file-icon-txt { color: #f59e0b; }
-
-      .file-info {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        min-width: 0;
-
-        .file-name {
-          font-size: 13px;
-          font-weight: 600;
-          color: #1e293b;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .file-status {
-          font-size: 11px;
-          font-weight: 600;
-
-          &.ok { color: #10b981; }
-          &.fail { color: #ef4444; }
-          &.uploading { color: #f59e0b; }
-          &.new { color: #409eff; }
-        }
-      }
-    }
-  }
+  background: #fff; border-radius: 20px; padding: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
 }
-
-.stop-btn {
-  margin-top: 8px;
-  min-width: 200px;
+.files-header {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 12px;
 }
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+.files-actions { display: flex; gap: 4px; }
+.files-empty {
+  text-align: center; padding: 24px 0; color: #94a3b8; font-size: 13px;
+  p { margin: 8px 0 0; }
 }
+.file-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 0; border-bottom: 1px solid #f1f5f9;
+  &:last-child { border-bottom: none; }
+  &.done { opacity: 0.6; }
+}
+.file-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.file-name { font-size: 13px; color: #334155; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-tag { font-size: 11px; font-weight: 600; &.ok { color: #10b981; } &.err { color: #ef4444; } &.ing { color: #409eff; } &.wait { color: #94a3b8; } }
+.ext-epub { color: #8b5cf6; } .ext-pdf { color: #ef4444; } .ext-txt { color: #64748b; }
+
+.stop-btn { margin-top: 4px; }
 </style>

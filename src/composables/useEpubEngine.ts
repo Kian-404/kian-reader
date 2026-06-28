@@ -5,6 +5,7 @@ import ePub, { Rendition } from 'epubjs';
 const createEpub = ePub as unknown as (data: ArrayBuffer) => any;
 import { useReaderStore } from '@/stores/reader';
 import { useLibraryStore, type Note } from '@/stores/library';
+import { READING_THEMES, THEME_ORDER } from '@/theme/readingThemes';
 
 export function useEpubEngine(bookId: string) {
   const readerStore = useReaderStore();
@@ -17,17 +18,17 @@ export function useEpubEngine(bookId: string) {
   const isPageLoading = ref(false);
   /** 当前章节路径（用于 TOC 高亮） */
   const currentHref = ref('');
+  /** 章节切换过渡中 */
+  const isTransitioning = ref(false);
 
   // Selection state (internal to engine, but exposed via event)
   let onSelectedCallback: ((cfiRange: string, text: string) => void) | null = null;
   let onGlobalClickCallback: ((relativeX: number) => void) | null = null;
 
-  /** 主题色常量 */
-  const THEMES: Record<string, { bg: string; color: string }> = {
-    day:   { bg: '#ffffff', color: '#333333' },
-    night: { bg: '#1a1a1a', color: '#ffffff' },
-    sepia: { bg: '#f4ecd8', color: '#5b4636' },
-  };
+  /**
+   * 从阅读主题系统生成 iframe 主题 CSS
+   * 自动覆盖所有已定义的主题，新增主题无需手动维护
+   */
 
   /**
    * 选择性注册 epubjs 主题：不做样式注入（改用 kdf-themes 类名作用域 CSS），
@@ -95,15 +96,21 @@ export function useEpubEngine(bookId: string) {
   /**
    * 生成所有主题的类名作用域 CSS 字符串
    * 用 .day body {} / .night body {} 代替裸 body{}，使 addClass/removeClass 真正控制主题
+   * 自动从 readingThemes.ts 读取所有主题色，新增主题自动生效
    */
   const buildThemeCSS = () => {
     const lines: string[] = [];
-    for (const [name, { bg, color }] of Object.entries(THEMES)) {
-      lines.push(`/* ${name} */`);
+    for (const name of THEME_ORDER) {
+      const theme = READING_THEMES[name];
+      if (!theme) continue;
+      const bg = theme.vars['--bg-primary'];
+      const color = theme.vars['--text-primary'];
+      lines.push(`/* ${name}: ${theme.label} */`);
       lines.push(`.${name} body { background-color: ${bg} !important; color: ${color} !important; }`);
       lines.push(`.${name} p { color: ${color} !important; }`);
       lines.push(`.${name} span { color: ${color} !important; }`);
       lines.push(`.${name} div { color: ${color} !important; }`);
+      lines.push(`.${name} a { color: ${theme.vars['--accent-color']} !important; }`);
     }
     return lines.join('\n');
   };
@@ -209,6 +216,7 @@ export function useEpubEngine(bookId: string) {
   };
 
   const initEpub = async (data: ArrayBuffer, containerId: string = "viewer") => {
+    isPageLoading.value = true;
     const epub = createEpub(data);
     epubBook.value = epub;
     
@@ -218,11 +226,15 @@ export function useEpubEngine(bookId: string) {
       href: item.href
     }));
 
+    // 宽屏（>=768px）时启用双页展开模式
+    const spreadMode = window.innerWidth >= 768 ? 'auto' : 'none';
+
     rendition.value = epub.renderTo(containerId, {
       width: "100%",
       height: "100%",
       flow: readerStore.paginationMode === 'horizontal' ? "paginated" : "scrolled",
       manager: readerStore.paginationMode === 'horizontal' ? "default" : "continuous",
+      spread: spreadMode,
       allowScriptedContent: true
     });
 
@@ -242,6 +254,7 @@ export function useEpubEngine(bookId: string) {
       injectThemeStyles();
       injectFontFamily();
       restoreHighlights();
+      isPageLoading.value = false;
     });
 
     const savedCfi = localStorage.getItem(`book-cfi-${bookId}`);
@@ -291,11 +304,13 @@ export function useEpubEngine(bookId: string) {
       await epubBook.value.loaded.navigation;
     }
 
+    const spreadMode = window.innerWidth >= 768 ? 'auto' : 'none';
     rendition.value = epubBook.value.renderTo("viewer", {
       width: "100%",
       height: "100%",
       flow: readerStore.paginationMode === 'horizontal' ? "paginated" : "scrolled",
       manager: readerStore.paginationMode === 'horizontal' ? "default" : "continuous",
+      spread: spreadMode,
       allowScriptedContent: true
     });
     
@@ -325,8 +340,19 @@ export function useEpubEngine(bookId: string) {
     setTimeout(() => { isPageLoading.value = false; }, 1500);
   };
 
-  const jumpTo = (href: string) => {
-    rendition.value?.display(href);
+  const jumpTo = async (href: string) => {
+    // 淡出 → 切换 → 淡入
+    isTransitioning.value = true;
+    await new Promise(r => setTimeout(r, 180));
+    try {
+      await rendition.value?.display(href);
+    } catch {
+      // 静默
+    }
+    // 等新内容渲染完成后淡入
+    requestAnimationFrame(() => {
+      isTransitioning.value = false;
+    });
   };
 
   const nextPage = () => {
@@ -334,7 +360,7 @@ export function useEpubEngine(bookId: string) {
       rendition.value?.next();
     } else {
       const container = document.querySelector('.epub-render');
-      if (container) container.scrollTop += window.innerHeight * 0.8;
+      if (container) container.scrollBy({ top: window.innerHeight * 0.9, behavior: 'smooth' });
     }
   };
 
@@ -343,7 +369,7 @@ export function useEpubEngine(bookId: string) {
       rendition.value?.prev();
     } else {
       const container = document.querySelector('.epub-render');
-      if (container) container.scrollTop -= window.innerHeight * 0.8;
+      if (container) container.scrollBy({ top: -(window.innerHeight * 0.9), behavior: 'smooth' });
     }
   };
 
@@ -369,11 +395,12 @@ export function useEpubEngine(bookId: string) {
     handlePaginationChange,
     updateEpubStyle,
     currentHref,
+    isTransitioning,
     jumpTo,
     nextPage,
     prevPage,
     onProgressChange,
     onSelected: (cb: (cfiRange: string, text: string) => void) => { onSelectedCallback = cb; },
-    onGlobalClick: (cb: (relativeX: number) => void) => { onGlobalClickCallback = cb; }
+    onGlobalClick: (cb: (relativeX: number) => void) => { onGlobalClickCallback = cb; },
   };
 }

@@ -83,30 +83,25 @@ watch(() => props.progress, (newVal) => {
 
   .top-bar, .bottom-bar {
     pointer-events: auto;
-    background: color-mix(in srgb, var(--bg-secondary, #f8fafc) 72%, transparent);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    box-shadow: 0 4px 30px var(--shadow-color, rgba(0, 0, 0, 0.08));
-    /* 与阅读区域形成层级区分 */
-    border-color: color-mix(in srgb, var(--border-color, #e2e8f0) 60%, transparent);
+    background: var(--bg-secondary);
   }
 
   .top-bar {
     position: absolute; top: 0; left: 0; right: 0;
-    padding: 15px 20px;
-    padding-top: calc(env(safe-area-inset-top, 0px) + 15px);
+    padding: 12px 16px;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid color-mix(in srgb, var(--border-color, #e2e8f0) 50%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--border-color, #e2e8f0) 30%, transparent);
 
     .book-title {
-      font-weight: 700;
+      font-weight: 600;
       font-size: 16px;
       color: var(--text-primary, #1e293b);
       flex: 1;
       text-align: center;
-      margin: 0 20px;
+      margin: 0 12px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -115,25 +110,24 @@ watch(() => props.progress, (newVal) => {
 
   .bottom-bar {
     position: absolute; bottom: 0; left: 0; right: 0;
-    padding: 15px 25px 20px 25px;
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+    padding: 12px 20px 16px;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    border-top: 1px solid color-mix(in srgb, var(--border-color, #e2e8f0) 50%, transparent);
-    border-radius: 24px 24px 0 0;
+    gap: 10px;
+    border-top: 1px solid color-mix(in srgb, var(--border-color, #e2e8f0) 30%, transparent);
 
     .progress-section {
       width: 100%;
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: 12px;
 
       .progress-text {
         font-size: 12px;
         color: var(--text-secondary, #64748b);
         font-weight: 600;
-        min-width: 60px;
+        min-width: 54px;
       }
 
       .progress-slider {
@@ -145,14 +139,14 @@ watch(() => props.progress, (newVal) => {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 10px;
+      padding: 0 4px;
 
       .action-item {
         display: flex;
         justify-content: center;
         align-items: center;
-        width: 44px;
-        height: 44px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         color: var(--text-secondary, #475569);
         cursor: pointer;
@@ -160,12 +154,12 @@ watch(() => props.progress, (newVal) => {
 
         &:active {
           transform: scale(0.9);
-          background: color-mix(in srgb, var(--accent-color, #409eff) 15%, transparent);
+          background: color-mix(in srgb, var(--accent-color, #409eff) 12%, transparent);
           color: var(--accent-color, #409eff);
         }
 
         .el-icon {
-          font-size: 24px;
+          font-size: 22px;
         }
       }
     }
@@ -173,16 +167,16 @@ watch(() => props.progress, (newVal) => {
 }
 
 .glass-btn {
-  background: color-mix(in srgb, var(--bg-secondary, #f8fafc) 55%, transparent) !important;
-  border: 1px solid color-mix(in srgb, var(--border-color, #e2e8f0) 40%, transparent) !important;
+  background: var(--bg-secondary) !important;
+  border: 1px solid color-mix(in srgb, var(--border-color, #e2e8f0) 30%, transparent) !important;
   color: var(--text-secondary, #475569) !important;
-  width: 44px !important;
-  height: 44px !important;
+  width: 40px !important;
+  height: 40px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   &:hover {
-    background: color-mix(in srgb, var(--bg-secondary, #f8fafc) 80%, transparent) !important;
+    background: color-mix(in srgb, var(--bg-primary, #fff) 85%, transparent) !important;
     color: var(--accent-color, #409eff) !important;
   }
 }

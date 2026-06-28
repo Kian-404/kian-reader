@@ -56,7 +56,11 @@
         </div>
 
         <!-- EPUB Engine -->
-        <div v-if="book?.format === 'epub'" class="epub-wrapper" @contextmenu.prevent>
+        <div v-if="book?.format === 'epub'" 
+          class="epub-wrapper" 
+          :class="{ transitioning: epubEngine.isTransitioning.value }"
+          @contextmenu.prevent
+        >
           <div id="viewer" class="epub-render"></div>
         </div>
 
@@ -91,9 +95,12 @@
         </div>
       </div>
 
-      <!-- Page Indicator (PDF / TXT) -->
+      <!-- Page Indicator -->
       <div v-if="book?.format === 'pdf' || book?.format === 'txt'" class="page-indicator">
         {{ book?.format === 'pdf' ? pdfCurrentPage : txtCurrentPage + 1 }} / {{ book?.format === 'pdf' ? pdfPages : txtTotalPages }}
+      </div>
+      <div v-else-if="book?.format === 'epub'" class="page-indicator">
+        {{ Math.round(progress) }}%
       </div>
 
       <!-- Control Overlay -->
@@ -917,6 +924,12 @@ const removeNote = (id: string) => {
   position: relative;
   width: 100%;
   height: 100%;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+
+  &.transitioning {
+    opacity: 0;
+  }
 }
 
 .epub-render {
@@ -992,15 +1005,16 @@ html.ion-palette-dark {
 
 <!-- 非 scoped：穿透 Teleport 覆盖 Element Plus 内联样式 -->
 <style>
-/* ── 所有抽屉玻璃质感 ── */
+/* ── 所有抽屉 ── */
 .glass-drawer.el-drawer {
-  background: color-mix(in srgb, var(--bg-primary, #fff) 95%, transparent) !important;
+  background: var(--bg-secondary) !important;
 }
 .glass-drawer .el-drawer__header {
   color: var(--text-primary, #1e293b) !important;
-  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color, #e2e8f0) 40%, transparent);
   margin-bottom: 0;
-  padding: 16px 20px;
+  padding: 14px 20px;
+  font-size: 15px;
 }
 .glass-drawer .el-drawer__close-btn,
 .glass-drawer .el-drawer__header button {

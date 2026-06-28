@@ -102,16 +102,21 @@ const doSearch = async () => {
         searchStatus.value = `第 ${current} / ${total} 章节`;
         try {
           await item.load(epub.load.bind(epub));
-          const res = item.find(query);
-          
-          if (res && res.length > 0) {
-            const formatted: SearchResult[] = res.map((match: any) => ({
-              ...match,
-              excerpt: highlightText(match.excerpt, query)
-            }));
-            formatted.forEach(pushSafe);
+          const body = item.document?.body;
+          if (!body) { item.unload(); continue; }
+          const text = body.textContent || '';
+          const regex = new RegExp(escapeRegex(query), 'gi');
+          let match;
+          while ((match = regex.exec(text)) !== null && searchResults.length < MAX_RESULTS) {
+            const start = Math.max(0, match.index - 30);
+            const end = Math.min(text.length, match.index + match[0].length + 30);
+            const excerpt = (start > 0 ? '...' : '') + text.slice(start, end) + (end < text.length ? '...' : '');
+            searchResults.push({
+              text: match[0],
+              excerpt: highlightText(excerpt, query),
+              cfi: item.cfiBase + '!' // 跳转到章节开头
+            });
           }
-          
           item.unload();
         } catch (err) {
           console.warn('Failed to search chapter:', item.href, err);
