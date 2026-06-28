@@ -1,60 +1,75 @@
 import { defineStore } from 'pinia';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { READING_THEMES, type ThemeName } from '@/theme/readingThemes';
 
-export type ReaderTheme = 'day' | 'night' | 'sepia';
 export type PaginationMode = 'horizontal' | 'vertical';
 
 /**
- * 阅读器状态管理store
- * 使用Pinia进行状态管理，用于管理阅读器的各种设置
+ * 阅读器状态管理 store
+ * 使用 Pinia 管理阅读器设置，自动持久化到 localStorage
  */
 export const useReaderStore = defineStore('reader', () => {
-  // 字体大小设置，从localStorage中获取，默认为18
+  // ── 状态 ──
+
+  /** 字体大小 */
   const fontSize = ref(Number(localStorage.getItem('reader-font-size')) || 18);
-  // 主题设置，从localStorage中获取，默认为'day'主题
-  const theme = ref<ReaderTheme>((localStorage.getItem('reader-theme') as ReaderTheme) || 'day');
-  // 行高设置，从localStorage中获取，默认为1.6
+  /** 阅读主题 */
+  const theme = ref<ThemeName>(
+    (localStorage.getItem('reader-theme') as ThemeName) || 'day',
+  );
+  /** 行高 */
   const lineHeight = ref(Number(localStorage.getItem('reader-line-height')) || 1.6);
-  // 字体族设置，从localStorage中获取，默认为'sans-serif'
+  /** 字体族 */
   const fontFamily = ref(localStorage.getItem('reader-font-family') || 'sans-serif');
-  // 亮度设置，从localStorage中获取，默认为100
+  /** 屏幕亮度覆盖（30–100） */
   const brightness = ref(Number(localStorage.getItem('reader-brightness')) || 100);
-  // 分页模式设置，从localStorage中获取，默认为'horizontal'
-  const paginationMode = ref<PaginationMode>((localStorage.getItem('reader-pagination-mode') as PaginationMode) || 'horizontal');
-  // PDF 缩放比例，从localStorage中获取，默认为1.0
+  /** 分页模式 */
+  const paginationMode = ref<PaginationMode>(
+    (localStorage.getItem('reader-pagination-mode') as PaginationMode) || 'horizontal',
+  );
+  /** PDF 缩放比例 */
   const pdfScale = ref(Number(localStorage.getItem('reader-pdf-scale')) || 1.0);
 
-  // 监听所有设置变化，当变化时自动更新localStorage
-  watch([fontSize, theme, lineHeight, fontFamily, brightness, paginationMode, pdfScale], () => {
-    localStorage.setItem('reader-font-size', fontSize.value.toString());
-    localStorage.setItem('reader-theme', theme.value);
-    localStorage.setItem('reader-line-height', lineHeight.value.toString());
-    localStorage.setItem('reader-font-family', fontFamily.value);
-    localStorage.setItem('reader-brightness', brightness.value.toString());
-    localStorage.setItem('reader-pagination-mode', paginationMode.value);
-    localStorage.setItem('reader-pdf-scale', pdfScale.value.toString());
-  });
+  // ── 衍生 ──
 
-  // 设置字体大小的方法
+  /** 当前主题的 CSS 变量键值对 */
+  const themeVars = computed(() => READING_THEMES[theme.value]?.vars ?? READING_THEMES.day.vars);
+
+  // ── 副作用：自动持久化 ──
+
+  watch(
+    [fontSize, theme, lineHeight, fontFamily, brightness, paginationMode, pdfScale],
+    () => {
+      localStorage.setItem('reader-font-size', fontSize.value.toString());
+      localStorage.setItem('reader-theme', theme.value);
+      localStorage.setItem('reader-line-height', lineHeight.value.toString());
+      localStorage.setItem('reader-font-family', fontFamily.value);
+      localStorage.setItem('reader-brightness', brightness.value.toString());
+      localStorage.setItem('reader-pagination-mode', paginationMode.value);
+      localStorage.setItem('reader-pdf-scale', pdfScale.value.toString());
+    },
+  );
+
+  // ── 方法 ──
+
   const setFontSize = (size: number) => {
     fontSize.value = size;
   };
 
-  // 设置主题的方法
-  const setTheme = (newTheme: ReaderTheme) => {
+  const setTheme = (newTheme: ThemeName) => {
     theme.value = newTheme;
   };
 
-  // 返回store中的所有状态和方法
   return {
     fontSize,
     theme,
+    themeVars,
     lineHeight,
     fontFamily,
     brightness,
     paginationMode,
     pdfScale,
     setFontSize,
-    setTheme
+    setTheme,
   };
 });

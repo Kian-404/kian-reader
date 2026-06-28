@@ -1,9 +1,9 @@
 import { ref, computed } from 'vue';
 import { useLibraryStore } from '@/stores/library';
 
-/** 每页字符数（约一屏中文） */
-const CHARS_PER_PAGE = 3000;
-/** 前后缓冲页数 */
+/** 每页字符数（约两屏中文，章节内翻页不越界） */
+const CHARS_PER_PAGE = 1200;
+/** 垂直模式前后缓冲页数 */
 const BUFFER_PAGES = 1;
 
 /**
@@ -47,6 +47,9 @@ export function useTxtEngine(bookId: string) {
   const currentPage = ref(0);
   const totalPages = ref(0);
 
+  /** 翻页动画方向：forward | backward | '' (初始) */
+  const pageAnimDir = ref<'forward' | 'backward' | ''>('');
+
   /** 将全文按固定字符数分页 */
   const allPages = computed(() => {
     const text = txtContent.value;
@@ -58,7 +61,15 @@ export function useTxtEngine(bookId: string) {
     return pages;
   });
 
-  /** 可见页列表（当前页 + 前后缓冲，模拟虚拟滚动） */
+  /** 水平模式：当前页文本 */
+  const currentPageText = computed(() => {
+    if (currentPage.value < allPages.value.length) {
+      return allPages.value[currentPage.value];
+    }
+    return '';
+  });
+
+  /** 垂直模式可见页列表（当前页 + 前后缓冲） */
   const visiblePages = computed(() => {
     if (allPages.value.length === 0) return [];
     const start = Math.max(0, currentPage.value - BUFFER_PAGES);
@@ -115,6 +126,7 @@ export function useTxtEngine(bookId: string) {
   const jumpTo = (href: string) => {
     const pageIndex = parseInt(href);
     if (!isNaN(pageIndex) && pageIndex >= 0 && pageIndex < totalPages.value) {
+      pageAnimDir.value = pageIndex > currentPage.value ? 'forward' : 'backward';
       currentPage.value = pageIndex;
       progress.value = ((pageIndex + 1) / totalPages.value) * 100;
       libraryStore.updateProgress(bookId, progress.value);
@@ -123,6 +135,7 @@ export function useTxtEngine(bookId: string) {
 
   const nextPage = () => {
     if (currentPage.value < totalPages.value - 1) {
+      pageAnimDir.value = 'forward';
       currentPage.value++;
       updateProgress();
     }
@@ -130,6 +143,7 @@ export function useTxtEngine(bookId: string) {
 
   const prevPage = () => {
     if (currentPage.value > 0) {
+      pageAnimDir.value = 'backward';
       currentPage.value--;
       updateProgress();
     }
@@ -148,6 +162,36 @@ export function useTxtEngine(bookId: string) {
     jumpTo(targetPage.toString());
   };
 
+  /**
+   * 垂直模式滚动检测：根据滚动位置推断当前可见页，触发缓冲页更新
+   */
+  const handleScroll = (containerEl: HTMLElement) => {
+    if (allPages.value.length === 0) return;
+    const pageEls = containerEl.querySelectorAll('.txt-page');
+    if (pageEls.length === 0) return;
+
+    let bestPage = currentPage.value;
+    let bestArea = 0;
+    const viewH = window.innerHeight;
+
+    pageEls.forEach((el, i) => {
+      const rect = el.getBoundingClientRect();
+      const visibleTop = Math.max(rect.top, 0);
+      const visibleBottom = Math.min(rect.bottom, viewH);
+      const area = Math.max(0, visibleBottom - visibleTop);
+      if (area > bestArea) {
+        bestArea = area;
+        const idx = visiblePages.value[i];
+        if (idx) bestPage = idx.globalIndex;
+      }
+    });
+
+    if (bestPage !== currentPage.value) {
+      currentPage.value = bestPage;
+      updateProgress();
+    }
+  };
+
   return {
     txtContent,
     toc,
@@ -156,10 +200,13 @@ export function useTxtEngine(bookId: string) {
     currentPage,
     totalPages,
     visiblePages,
+    currentPageText,
+    pageAnimDir,
     initTxt,
     jumpTo,
     nextPage,
     prevPage,
     onProgressChange,
+    handleScroll,
   };
 }

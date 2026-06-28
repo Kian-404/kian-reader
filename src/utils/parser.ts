@@ -53,9 +53,9 @@ export const extractMetadata = async (file: File, format: 'txt' | 'epub' | 'pdf'
         metadata.author = (info.info as any).Author || metadata.author;
       }
 
-      // Extract first page as cover
+      // Extract first page as cover (JPEG for smaller storage)
       const page = await pdf.getPage(1);
-      const viewport = page.getViewport({ scale: 0.5 });
+      const viewport = page.getViewport({ scale: 0.8 });
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
       canvas.height = viewport.height;
@@ -63,7 +63,7 @@ export const extractMetadata = async (file: File, format: 'txt' | 'epub' | 'pdf'
 
       if (context) {
         await page.render({ canvasContext: context, viewport, canvas }).promise;
-        metadata.cover = canvas.toDataURL();
+        metadata.cover = canvas.toDataURL('image/jpeg', 0.75);
       }
     }
   } catch (error) {
